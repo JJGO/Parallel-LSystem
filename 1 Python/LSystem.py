@@ -11,7 +11,7 @@ class Symbol(object):
     def __str__(self):
         output = self.char
         if len(self.parameters):
-            output += "("+", ".join(parameters)
+            output += "("+", ".join(str(i) for i in self.parameters)
             output = output[:-2]+")"
         return output
 
@@ -19,7 +19,13 @@ class Symbol(object):
         return str(self)
 
     def __hash__(self):
-        return hash((self.char,self.parameters))
+        return hash(self.char)
+
+    def __eq__(self,other):
+        return self.char == other.char
+
+    def __ne__(self,other):
+        return self.char != other.char
 
 class LSystem (object):
 
@@ -40,16 +46,16 @@ class LSystem (object):
                         Convenient for simple non parametric LSystems
         """
         # self.alphabet   = set(alphabet)
-        self.axiom      = axiom
-        self.production = production
+        self.axiom      = list(axiom)
+        self.production = {}
         self.state      = self.axiom
         self.name       = name
         self.iteration  = 0
 
-
         self.alphabet = set( production.keys() )
-        for rule in production.values():
-            for symbol in rule:
+        for pred in production:
+            self.production[pred] = list(production[pred])
+            for symbol in production[pred]:
                 if symbol not in self.alphabet:
                     self.alphabet.add(symbol)
                     self.production[symbol] = symbol
@@ -88,11 +94,11 @@ class LSystem (object):
         """
         #Creates an empty string to store the new iteration
         # (Remember we cannot change a string we are using in a loop)
-        newString = ""
+        newState = []
         for e in self.state:
-            newString += self.substitute(e)
+            newState.extend( self.substitute(e) )
 
-        self.state = newString
+        self.state = newState
         self.iteration += 1
 
     def __str__(self):
@@ -118,20 +124,26 @@ class LSystem (object):
 
         return output
 
+    def draw(self):
+        raise NotImplementedError("Specific Drawing must be specified by the subclass")
+
 class ParametricLSystem(LSystem):
-    """Abstract Parametric variation of a LSystem"""
+    """Abstract class to define a parametric variation of a LSystem"""
     
-    def __init__(self,axiom,name = "ParametricLSystem"):
+    def __init__(self,axiom,name = "Parametric LSystem"):
         # self.alphabet   = set(alphabet)
         self.axiom      = axiom
         self.state      = self.axiom
         self.name       = name
         self.iteration  = 0
+
+    def substitute(self):
+        raise NotImplementedError("Needs to be implemented by the subclass")
     
     def __str__(self):
         output = ""
         #Adds the title
-        output += "The Lindenmayer System " +str(self.name) +" is composed by:\n"
+        output += "The Parametric Lindenmayer System " +str(self.name) +" is composed by:\n"
         
         #The axiom and the current string
         output += "The axiom is: " + str(self.axiom) +"\n"
@@ -144,31 +156,47 @@ class Visualize(object):
     @classmethod
     def basic_actions (cls, left_angle, right_angle, fwd_distance):
         basic =  {
-            '-': lambda _ : t.left(left_angle),
-            '+': lambda _ : t.right(right_angle),
+            '+': lambda _ : t.left(left_angle),
+            '-': lambda _ : t.right(right_angle),
             'F': lambda _ : t.forward(fwd_distance),
-            ' ': lambda obj : obj.nop(),
-            '[': lambda obj : obj.push(),
-            ']': lambda obj : obj.pop(),
+            ' ': lambda (obj,s) : obj.nop(),
+            '[': lambda (obj,s) : obj.push(),
+            ']': lambda (obj,s) : obj.pop(),
         }
         return basic
+
+    @classmethod
+    def basic_actions_parametric (cls, left_angle, right_angle, fwd_distance):
+        actions = {}
+        actions[Symbol('+')] = lambda _ : t.left(left_angle)
+        actions[Symbol('-')] = lambda _ : t.right(right_angle)
+        actions[Symbol(' ')] = lambda (obj,s) : obj.nop()
+        actions[Symbol('[')] = lambda (obj,s) : obj.push()
+        actions[Symbol(']')] = lambda (obj,s) : obj.pop()
+        actions[Symbol('F')] = lambda (obj,s) : t.forward(s.parameters[0])
+        actions[Symbol('!')] = lambda (obj,s) : t.width(s.parameters[0])
+        actions[Symbol('+')] = lambda (obj,s) : t.left(s.parameters[0])
+        actions[Symbol('-')] = lambda (obj,s) : t.right(s.parameters[0])
+        return actions
 
     def __init__(self,actions,drawColour="black"):
         self.actions = actions
         self.stack = []
         t.setup()
         # Try to make the animation of drawing reasonably fast.
-        t.tracer(50,0) # Only draw every 50th update, set delay to zero.
+        t.tracer(100,0) # Only draw every 50th update, set delay to zero.
         t.title ("Jose Javier's L System demo")
         t.reset()
         t.degrees()
         t.color(drawColour)
         t.hideturtle() # don't draw the turtle; increase drawing speed.
+        # t.speed(0)
 
     def draw(self,state):
         for symbol in state:
             f = self.actions[symbol]
-            f(self)
+            f( (self,symbol) )
+        t.update()
 
     def push(self):
         self.stack.append( (t.position(),t.heading() ) )
@@ -184,6 +212,9 @@ class Visualize(object):
 
     def nop(self):
         pass
+
+    def forward(self,n):
+        t.forward(n)
 
 def saveImg(name):
     name = name + ".svg"

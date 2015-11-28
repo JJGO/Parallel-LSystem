@@ -105,13 +105,13 @@ def interactive_demo():
          sys.exit(0)
    # show_demo("Bushy tree", demo1)
    show_demo("Twiggy tree", demo2)
-   show_demo("Koch curve", demo3)
-   show_demo("Sierpinski triangle", demo4)
-   show_demo("Peano Gosper curve", demo5)
-   show_demo("Conifer-like tree", demo6)
-   show_demo("Tiles", demo7)
-   show_demo("Crystal", demo8)
-   show_demo("Peano curve", demo9)
+   # show_demo("Koch curve", demo3)
+   # show_demo("Sierpinski triangle", demo4)
+   # show_demo("Peano Gosper curve", demo5)
+   # show_demo("Conifer-like tree", demo6)
+   # show_demo("Tiles", demo7)
+   # show_demo("Crystal", demo8)
+   # show_demo("Peano curve", demo9)
 
 def demo0():
    class SimpleInterp(object):
