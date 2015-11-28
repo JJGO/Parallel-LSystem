@@ -107,7 +107,7 @@ class LSystem (object):
         """
         output = ""
         #Adds the title
-        output += "The Lindenmayer System " +str(self.name) +" is composed by:\n"
+        output += "The Lindenmayer System " +"".join(self.name) +" is composed by:\n"
         
         #The alphabet
         output += "The alphabet : "+" ".join(self.alphabet)+"\n"
@@ -116,11 +116,11 @@ class LSystem (object):
         
         output += "The production: \n"
         for letter in self.production:
-            output += "\t" + letter + " -> " + self.production[letter] + "\n"
+            output += "\t" + letter + " -> " + "".join(self.production[letter]) + "\n"
 
         #The axiom and the current string
-        output += "The axiom is: " + str(self.axiom) +"\n"
-        output += "The current string after " + str(self.iteration) + " iterations is: \n" + self.state + "\n"
+        output += "The axiom is: " + "".join(self.axiom) +"\n"
+        output += "The current string after " + str(self.iteration) + " iterations is: \n" + "".join(self.state) + "\n"
 
         return output
 
