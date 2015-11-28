@@ -255,12 +255,14 @@ class RowOfTrees(ParametricLSystem):
                 p = Symbol('F',[x * self.p])
                 q = Symbol('F',[x * self.q])
                 h = Symbol('F',[x * self.h])
-                return [p, Symbol('+'), h ,Symbol('-'),Symbol('-'),h,Symbol('+'),q]
+                plus = Symbol('+',[87])
+                minus = Symbol('-',[87])
+                return [p, plus, h ,minus,minus,h,plus,q]
         else:
             return [symbol]
 
     def draw(self):
-        actions = Visualize.basic_actions_parametric(87,87,8)
+        actions = Visualize.basic_actions_parametric()
         actions[Symbol('F')] = lambda (obj,s) : t.forward(s.parameters[0])
         V = Visualize(actions)
         # t.left(90)
@@ -283,14 +285,16 @@ class BetterRowOfTrees(ParametricLSystem):
                 p = Symbol('F',[x * self.p,2])
                 h = Symbol('F',[x * self.h,1])
                 q = Symbol('F',[x * self.q,0])
-                return [p, Symbol('+'), h ,Symbol('-'),Symbol('-'),h,Symbol('+'),q]
+                plus = Symbol('+',[87])
+                minus = Symbol('-',[87])
+                return [p, plus, h ,minus, minus, h, plus ,q]
             else:
                 return [Symbol('F',[x,t-1])]
         else:
             return [symbol]
 
     def draw(self):
-        actions = Visualize.basic_actions_parametric(87,87,8)
+        actions = Visualize.basic_actions_parametric()
         V = Visualize(actions)
         # t.left(90)
         V.draw(self.state)
@@ -309,21 +313,31 @@ if __name__ == '__main__':
     # (TwinDragon,        13),
     # (TerDragon,         9),
     # (LevyDragon,        14),
-    (BushyTree,         4),
-    (TwiggyTree,        7),
-    (Conifer,           12),
-    (Crystal,           6),
-    (Tiles,             4),
-    (KochIsland,        3),
-    (StochasticTree,    5),
-    (RowOfTrees,        5),
-    (BetterRowOfTrees,  9),
+    # (BushyTree,         4),
+    # (TwiggyTree,        7),
+    # (Conifer,           12),
+    # (Crystal,           6),
+    # (Tiles,             4),
+    # (KochIsland,        3),
+    # (StochasticTree,    5),
+    # (RowOfTrees,        5),
+    # (BetterRowOfTrees,  9),
     ]
 
-    for fractal,it in Cs:
-        F = fractal()
-        F.iterate(it)
-        # print F.state
-        F.draw()
-        saveImg(F.name+str(F.iteration))
+    # for fractal,it in Cs:
+    #     F = fractal()
+    #     F.iterate(it)
+    #     # print F.state
+    #     F.draw()
+    #     saveImg(F.name+str(F.iteration))
         # wait = raw_input("PRESS ENTER TO CONTINUE")
+    
+
+    R = RowOfTrees()
+    R.iterate(2)
+    print R.state
+    # s = "F(45)+(87)F(68.7386)-(87)-(87)F(68.7386)+(87)F(105)+(87)F(68.7386)+(87)F(105)-(87)-(87)F(105)+(87)F(160.39)-(87)-(87)F(68.7386)+(87)F(105)-(87)-(87)F(105)+(87)F(160.39)+(87)F(105)+(87)F(160.39)-(87)-(87)F(160.39)+(87)F(245)"
+    # R.setState(parseSymbols(s))
+    print R.state
+    R.draw()
+    wait = raw_input("PRESS ENTER TO CONTINUE")

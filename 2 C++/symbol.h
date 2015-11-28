@@ -19,6 +19,8 @@ class Symbol{
 		Symbol(const char c, const double p[], int n);
 		~Symbol(){};
 
+		std::vector<double> getParameters() const;
+
 		bool operator == (const Symbol &other) const;
 
 };

@@ -1,9 +1,14 @@
 #include "lsystem.h"
 
+LSystem::LSystem()
+{
+	reset();
+}
+
 LSystem::LSystem(std::vector<Symbol> ax)
 {
 	axiom = ax;
-	this->reset();
+	reset();
 }
 
 std::vector<Symbol> LSystem::getState() const
@@ -38,17 +43,7 @@ void LSystem::iterate(int n)
 
 void LSystem::substitute(Symbol s, std::vector<Symbol> &string)
 {
-	Symbol F('F');
-	if(s == F)
-	{
-		Symbol p('+');
-		Symbol m('-');
-		Symbol production[9] = {F, p, F, m, F, m, F, p, F};
-		string.insert(string.end(),production,production+(sizeof(production)/sizeof(Symbol)));
-	}else
-	{
-		string.push_back(s);
-	}
+	string.push_back(s);
 }
 
 std::ostream& operator<<(std::ostream& output, const LSystem &l){
@@ -59,3 +54,73 @@ std::ostream& operator<<(std::ostream& output, const LSystem &l){
 	}
 	return output;
 }
+
+DLSystem::DLSystem(std::vector<Symbol> axiom, std::vector<double> par)
+:LSystem(axiom)
+{
+	parameters = par;
+}
+
+double DLSystem::calculateMetric()
+{
+	return 0.0;
+}
+
+void DLSystem::updateMetric(std::vector<double> neighbor_metrics)
+{
+	return;
+}
+
+LGroup::LGroup(std::vector<DLSystem> s)
+{
+	systems = s;
+}
+
+std::vector< std::vector<Symbol> > LGroup::getStates() const
+{
+	std::vector< std::vector<Symbol> > states;
+
+	for(int i = 0 ; i < systems.size() ; i++)
+	{
+		states.push_back(systems[i].getState());
+	}
+
+}
+
+void LGroup::reset()
+{
+	for(int i = 0 ; i < systems.size() ; i++)
+	{
+		systems[i].reset();
+	}
+}
+
+void LGroup::next()
+{
+	std::vector<double> global_metrics;
+	for(int i = 0 ; i < systems.size() ; i++)
+	{
+		systems[i].next();
+		global_metrics.push_back( systems[i].calculateMetric() );
+	}
+
+	for(int i = 0 ; i < systems.size() ; i++)
+	{
+		systems[i].updateMetric(global_metrics);
+	}
+
+}
+
+void LGroup::iterate(int n)
+{
+	for(int i = 0 ; i < n ; i++)
+	{
+		next();
+	}
+}
+
+void LGroup::addSystem(DLSystem l)
+{
+	systems.push_back(l);
+}
+

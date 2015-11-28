@@ -3,8 +3,8 @@ from LSystem import *
 
 class DependantLSystem(ParametricLSystem):
 
-    def __init__(self,axiom,production,name = "Dependant LSystem"):
-        ParametricLSystem.__init__(self,axiom,production,name)
+    def __init__(self,axiom,name = "Dependant LSystem"):
+        ParametricLSystem.__init__(self,axiom,name)
         self.metric = 0
 
     def calculateMetric(self):
@@ -63,10 +63,11 @@ class LGroup(object):
         for ls in self.lsystems:
             ls.next()
             metrics.append(ls.calculateMetric())
-
-        for i in range(len(self.lsystems)):
-            ls.updateMetric(metrics[:i]+metrics[i+1:])
+        print metrics
+        for ls in self.lsystems:
+            ls.updateMetric(metrics)
 
     def draw(self):
         for ls in self.lsystems:
             ls.draw()
+            wait = raw_input("PRESS ENTER TO CONTINUE")

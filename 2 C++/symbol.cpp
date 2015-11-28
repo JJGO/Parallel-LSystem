@@ -30,6 +30,11 @@ Symbol::Symbol(const char c, const double p[], int n)
 	}
 }
 
+std::vector<double> Symbol::getParameters() const
+{
+	return parameters;
+}
+
 bool Symbol::operator==(const Symbol &other) const {
 	if (character == other.character)
 		return true;

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
-#include "lsystem.h"
+#include "fractals.h"
 
 int main(int argc, char const *argv[])
 {
@@ -32,6 +32,11 @@ int main(int argc, char const *argv[])
 	std::cout << L << std::endl;
 	L.iterate(2);
 	std::cout << L << std::endl;
+
+	RowOfTrees F;
+	std::cout << F << std::endl;
+	F.iterate(2);
+	std::cout << F << std::endl;
 
 	return 0;
 }

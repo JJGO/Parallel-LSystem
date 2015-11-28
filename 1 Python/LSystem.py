@@ -12,7 +12,9 @@ class Symbol(object):
         output = self.char
         if len(self.parameters):
             output += "("+", ".join(str(i) for i in self.parameters)
-            output = output[:-2]+")"
+            if(len(self.parameters) > 1):
+                output = output[:-2]
+            output += ")"
         return output
 
     def __repr__(self):
@@ -127,6 +129,10 @@ class LSystem (object):
     def draw(self):
         raise NotImplementedError("Specific Drawing must be specified by the subclass")
 
+    def setState(self,state):
+        self.state = state
+        self.iteration = 0
+
 class ParametricLSystem(LSystem):
     """Abstract class to define a parametric variation of a LSystem"""
     
@@ -166,10 +172,8 @@ class Visualize(object):
         return basic
 
     @classmethod
-    def basic_actions_parametric (cls, left_angle, right_angle, fwd_distance):
+    def basic_actions_parametric (cls):
         actions = {}
-        actions[Symbol('+')] = lambda _ : t.left(left_angle)
-        actions[Symbol('-')] = lambda _ : t.right(right_angle)
         actions[Symbol(' ')] = lambda (obj,s) : obj.nop()
         actions[Symbol('[')] = lambda (obj,s) : obj.push()
         actions[Symbol(']')] = lambda (obj,s) : obj.pop()
@@ -224,3 +228,30 @@ def saveImg(name):
 def askSaveImg():
     name = raw_input("What would you like to name it? ")
     saveImg(name)
+
+def parseSymbols(string):
+    state = []
+    L = len(string)
+    string += ' '
+    i = 0
+    while(i < L):
+        c = string[i]
+        if string[i+1] != '(':
+            state.append( Symbol(c) )
+        else:
+            par = []
+            i += 2
+            j = i
+            end = False
+            while not end:
+                if string[j] == ',' or string[j] == ')':
+                    # print string[i:j]
+                    par.append(string[i:j])
+                    i = j
+                    if(string[j] == ')'):
+                        end = True
+                j+=1
+            par = map(float,par)
+            state.append( Symbol(c,par) )
+        i+=1
+    return state[:-1]
