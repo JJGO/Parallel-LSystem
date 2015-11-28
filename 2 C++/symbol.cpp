@@ -3,49 +3,30 @@
 Symbol::Symbol()
 {
 	character = 0;
-	numpar = 0;
 }
-
 Symbol::Symbol(const char c)
 {
 	character = c;
-	numpar = 0;
 }
-
 Symbol::Symbol(const char c, const int n)
 {
 	character = c;
-	if(n > 0)
+	for(int i = 0; i < n ; i++)
 	{
-		numpar = n;
-		parameters = new double[numpar];
-		std::fill(parameters, parameters+numpar, 0.0);
-	}
-	else
-	{
-		numpar = 0;
+		parameters.push_back(0.0);
 	}
 }
-
-Symbol::Symbol(const char c, const int n, const double p[])
+Symbol::Symbol(const char c, std::vector<double> p)
 {
 	character = c;
-	if(n > 0)
-	{
-		numpar = n;
-		parameters = new double[numpar];
-		std::copy(p,p+numpar,parameters);
-	}else{
-		numpar = 0;
-	}
-	
+	parameters = p;
 }
-
-Symbol::~Symbol()
+Symbol::Symbol(const char c, const double p[], int n)
 {
-	if(this->numpar > 0)
+	character = c;
+	for(int i = 0; i < n ; i++)
 	{
-    	delete[] parameters;
+		parameters.push_back(p[i]);
 	}
 }
 
@@ -57,14 +38,15 @@ bool Symbol::operator==(const Symbol &other) const {
 
 std::ostream& operator<<(std::ostream& output, const Symbol &s){
 	output << s.character;
-	if(s.numpar > 0)
+	int n = s.parameters.size();
+	if(n > 0)
 	{
 		output << '(';
-		for(int i = 0 ; i < s.numpar-1 ; i++)
+		for(int i = 0 ; i < n-1 ; i++)
 		{
 			output << s.parameters[i] << ", ";
 		}
-		output << s.parameters[s.numpar-1] << ')';
+		output << s.parameters[n-1] << ')';
 	}
 	return output;
 }

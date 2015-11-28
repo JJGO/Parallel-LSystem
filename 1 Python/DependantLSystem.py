@@ -3,38 +3,38 @@ from LSystem import *
 
 class DependantLSystem(ParametricLSystem):
 
-	def __init__(self,axiom,production,name = "Dependant LSystem"):
-		ParametricLSystem.__init__(self,axiom,production,name)
-		self.metric = 0
+    def __init__(self,axiom,production,name = "Dependant LSystem"):
+        ParametricLSystem.__init__(self,axiom,production,name)
+        self.metric = 0
 
-	def calculateMetric(self):
-		raise NotImplementedError("Needs to be implemented by the subclass")
+    def calculateMetric(self):
+        raise NotImplementedError("Needs to be implemented by the subclass")
 
-	def updateMetric(self,neighbor_metrics):
-		raise NotImplementedError("Needs to be implemented by the subclass")
+    def updateMetric(self,neighbor_metrics):
+        raise NotImplementedError("Needs to be implemented by the subclass")
 
-	def __str__(self):
-	    output = ""
-	    #Adds the title
-	    output += "The Parametric Lindenmayer System " +str(self.name) +" is composed by:\n"
-	    
-	    #The axiom and the current string
-	    output += "The axiom is: " + str(self.axiom) +"\n"
-	    output += "The current string after " + str(self.iteration) + " iterations is: \n" + self.state + "\n"
+    def __str__(self):
+        output = ""
+        #Adds the title
+        output += "The Parametric Lindenmayer System " +str(self.name) +" is composed by:\n"
+        
+        #The axiom and the current string
+        output += "The axiom is: " + str(self.axiom) +"\n"
+        output += "The current string after " + str(self.iteration) + " iterations is: \n" + self.state + "\n"
 
-	    return output
+        return output
 
 
 
-class LSystemCollection(object):
+class LGroup(object):
 
-	def __init__(self,lystems=[]):
-		self.lystems = lystems
+    def __init__(self,lsystems=[]):
+        self.lsystems = lsystems
 
-	def add_LSystem(self,lystem):
-		self.lystems.append(lsystem)
+    def add_LSystem(self,lystem):
+        self.lsystems.append(lsystem)
 
-	    def reset(self):
+    def reset(self):
         self.state = self.axiom
         self.iteration = 0
 
@@ -61,12 +61,12 @@ class LSystemCollection(object):
         """
         metrics = []
         for ls in self.lsystems:
-        	ls.next()
-        	metrics.append(ls.calculateMetric())
+            ls.next()
+            metrics.append(ls.calculateMetric())
 
         for i in range(len(self.lsystems)):
-        	ls.updateMetric(metrics[:i]+metrics[i+1:])
+            ls.updateMetric(metrics[:i]+metrics[i+1:])
 
     def draw(self):
-    	for ls in self.lsystems:
-    		ls.draw()
+        for ls in self.lsystems:
+            ls.draw()
