@@ -5,15 +5,20 @@
 #include <vector>
 #include "symbol.h"
 
+struct Point {
+    double x;
+    double y;
+};
+
 class LSystem{
 	friend std::ostream& operator<<(std::ostream& output, const LSystem& s);
 
 	private:
 		int iteration;
-		std::vector<Symbol> state;
 		
 	protected:
 		std::vector<Symbol> axiom;
+		std::vector<Symbol> state;
 
 	public:
 		LSystem();
@@ -30,24 +35,26 @@ class LSystem{
 
 class DLSystem : public LSystem
 {
-	private:
+	protected:
 		std::vector<double> parameters;
 	public:
+		DLSystem(){};
 		DLSystem(std::vector<Symbol> axiom, std::vector<double> par);
+		// virtual void substitute(Symbol s, std::vector<Symbol> &string);
 		virtual double calculateMetric();
-		virtual void updateMetric(std::vector<double> neighbor_metrics);
+		virtual void updateMetric(std::vector<double> global_metrics);
 };
 
 class LGroup
 {
-	private:
+	protected:
 		std::vector<DLSystem> systems;
 	public:
 		LGroup(){};
 		LGroup(std::vector<DLSystem> s);
 		std::vector< std::vector<Symbol> > getStates() const;
 		void reset();
-		void next();
+		virtual void next();
 		void iterate(int n);
 		void addSystem(DLSystem l);
 };

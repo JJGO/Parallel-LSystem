@@ -66,7 +66,7 @@ double DLSystem::calculateMetric()
 	return 0.0;
 }
 
-void DLSystem::updateMetric(std::vector<double> neighbor_metrics)
+void DLSystem::updateMetric(std::vector<double> global_metrics)
 {
 	return;
 }
@@ -123,4 +123,5 @@ void LGroup::addSystem(DLSystem l)
 {
 	systems.push_back(l);
 }
+
 

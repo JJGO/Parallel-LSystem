@@ -1,42 +1,62 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include "fractals.h"
 
 int main(int argc, char const *argv[])
 {
-	Symbol a('A');
-	std::cout << a << std::endl;
-	Symbol b('B',2);
-	std::cout << b << std::endl;
-	double p[3] = {1.2, 2.4, 4.8};
-	Symbol c('C', p, 3);
-	std::vector<double> v(p,p+2);
-	Symbol d('D',v);
-	std::cout << c << std::endl;
-	Symbol e;
-	e = c;
-	std::cout << e << std::endl;
-	////
-	std::vector<Symbol> axiom;
-	axiom.push_back(c);
-	axiom.push_back(a);
-	axiom.push_back(b);
-	axiom.push_back(e);
-	// for(int i ; i < axiom.size() ; i++)
-	// {
-	// 	std::cout << axiom[i];
-	// }
-	std::cout << std::endl;
-	LSystem L(axiom);
-	std::cout << L << std::endl;
-	L.iterate(2);
-	std::cout << L << std::endl;
+	std::srand(std::time(0)); //use current time as seed for random generator
+	clock_t begin, end;
+	double time_spent;
 
-	RowOfTrees F;
-	std::cout << F << std::endl;
-	F.iterate(2);
-	std::cout << F << std::endl;
+	begin = clock();
+
+	int forestSize = 5;
+
+	// std::vector<Tree*> Forest;
+	std::vector<Tree*> Forest;
+	std::vector<Point> positions;
+	std::vector< std::vector<int> > neighbors;
+	std::vector<double> metrics;
+
+
+	for(int i = 0; i < forestSize; i++)
+	{
+		double x = fRand(0,20);
+		double y = fRand(0,20);
+		Point p = {x,y};
+		// MonopodialTree T;
+		Tree *T = new MonopodialTree();
+		Forest.push_back(T);
+		positions.push_back(p);
+		metrics.push_back(0);
+	}
+
+	for(int j = 0 ; j < 15 ; j++)
+	{
+		for(int i = 0; i < Forest.size() ; i++)
+		{
+			Forest[i]->next();
+			// std::cout << Forest[i] << std::endl;
+			metrics[i] = Forest[i]->calculateMetric();
+		}
+
+		for(int i = 0; i < Forest.size() ; i++)
+		{
+			Forest[i]->updateMetric(metrics);
+			std::cout << j << " " << i << " " << metrics[i] << std::endl;
+		}
+	}
+	
+	end = clock();
+	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	std::cout << "\nTIME :" << time_spent << "seconds" << std::endl;
+
+	for(int i = 0; i < Forest.size() ; i++)
+	{
+		delete Forest[i];
+	}
 
 	return 0;
 }

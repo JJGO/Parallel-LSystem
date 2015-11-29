@@ -56,4 +56,8 @@ std::ostream& operator<<(std::ostream& output, const Symbol &s){
 	return output;
 }
 
-
+double fRand(double fMin, double fMax)
+{
+    double f = (double)rand() / RAND_MAX;
+    return fMin + f * (fMax - fMin);
+}

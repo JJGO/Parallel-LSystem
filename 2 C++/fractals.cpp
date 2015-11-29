@@ -95,3 +95,107 @@ void RowOfTrees::substitute(Symbol s, std::vector<Symbol> &string)
 	}
 }
 
+// void substitute(Symbol s, std::vector<Symbol> &string)
+// {
+// 	string.push_back(s);
+// }
+
+double Tree::calculateMetric()
+{
+	double nodes = 0;
+	for(int i = 0 ; i < state.size() ; i++)
+	{
+		if( state[i] == Symbol(']') )
+		{
+			nodes++;
+		}
+	}
+	metric = nodes;
+	return nodes;
+}
+
+void Tree::updateMetric(std::vector<double> neighbor_metrics)
+{
+	double average = 0;
+	for(int i = 0 ; i < neighbor_metrics.size() ; i++)
+	{
+		average += neighbor_metrics[i];
+	}
+	average /= neighbor_metrics.size();
+	probability *= (1+(average - metric)/average);
+
+}
+
+MonopodialTree::MonopodialTree()
+{
+ 	parameters = std::vector<double>(7);
+	parameters[0] = 0.9; 	// r1
+	parameters[1] = 0.6; 	// r2
+	parameters[2] = 45; 	// a0
+	parameters[3] = 45; 	// a2
+	parameters[4] = 137.5; 	// d
+	parameters[5] = 0.707; 	// wr
+	probability = .95;		// probability
+	double symbol_par[2] = {1,10};
+	Symbol A('A',symbol_par,2);
+	axiom.push_back(A);
+	reset();
+}
+
+
+void MonopodialTree::substitute(Symbol s, std::vector<Symbol> &string)
+{
+
+	if( (s == Symbol('A') || s == Symbol('B') || s == Symbol('C') ) && fRand(0,1) <= probability )
+	{
+		double l = s.getParameters()[0];
+		double w = s.getParameters()[1];
+		Symbol production[8];
+		double symbol_par[2];
+		symbol_par[0] = w;
+		production[0] = Symbol('!',symbol_par,1);
+
+		symbol_par[0] = l;
+		production[1] = Symbol('F',symbol_par,1);
+
+		production[2] = Symbol('[');
+
+		double symbol_par1[2] = { l * parameters[1] , w * parameters[5] };
+		double symbol_par2[2] = { l * parameters[0] , w * parameters[5] };
+
+		if( s == Symbol('A'))
+		{
+			symbol_par[0] = parameters[2];
+			production[3] = Symbol('&',symbol_par,1);
+			production[4] = Symbol('B',symbol_par1,2);
+			production[5] = Symbol(']');
+			symbol_par[0] = parameters[4];
+			production[6] = Symbol('>',symbol_par,1);
+			production[7] = Symbol('A',symbol_par2,2);
+		}
+		else if( s == Symbol('B') )
+		{
+			symbol_par[0] = parameters[3];
+			production[3] = Symbol('-',symbol_par,1);
+			production[4] = Symbol('$');
+			production[5] = Symbol('C',symbol_par1,2);
+			production[6] = Symbol(']');
+			production[7] = Symbol('C',symbol_par2,2);
+		}
+		else
+		{
+			symbol_par[0] = parameters[3];
+			production[3] = Symbol('+',symbol_par,1);
+			production[4] = Symbol('$');
+			production[5] = Symbol('B',symbol_par1,2);
+			production[6] = Symbol(']');
+			production[7] = Symbol('B',symbol_par2,2);
+		}
+		string.insert(string.end(),production,production+(sizeof(production)/sizeof(Symbol)));
+	}
+	else
+	{
+		string.push_back(s);
+	}
+}
+

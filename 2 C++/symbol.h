@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 
 class Symbol{
 	friend std::ostream& operator<<(std::ostream& output, const Symbol& s);
@@ -24,6 +25,8 @@ class Symbol{
 		bool operator == (const Symbol &other) const;
 
 };
+
+double fRand(double fMin, double fMax);
 
 #endif
 

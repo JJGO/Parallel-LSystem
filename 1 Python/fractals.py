@@ -46,6 +46,20 @@ class MooreCurve(HilbertCurve):
         self.name = "MooreCurve"
         self.axiom = "AFA+F+AFA"
 
+class Hilbert3D(LSystem):
+
+    def __init__(self):
+        axiom = "X"
+        production = {
+            'X' : "&<XF&<XFX-F&>>XFX^F+>>XFX-F>X->"
+        }
+        LSystem.__init__(self,axiom,production,"Hilbert 3D Curve")
+
+    def draw(self):
+        actions = Visualize.basic_actions(90,90,5)
+        actions['X'] = actions[' ']
+        Visualize(actions).draw(self.state)
+
 class KochSnowflake(LSystem):
     def __init__(self):
         axiom = "F++F++F"
@@ -324,20 +338,20 @@ if __name__ == '__main__':
     # (BetterRowOfTrees,  9),
     ]
 
-    # for fractal,it in Cs:
-    #     F = fractal()
-    #     F.iterate(it)
-    #     # print F.state
-    #     F.draw()
-    #     saveImg(F.name+str(F.iteration))
-        # wait = raw_input("PRESS ENTER TO CONTINUE")
+    for fractal,it in Cs:
+        F = fractal()
+        F.iterate(it)
+        # print F.state
+        F.draw()
+        saveImg(F.name+str(F.iteration))
+        wait = raw_input("PRESS ENTER TO CONTINUE")
     
 
-    R = RowOfTrees()
-    R.iterate(2)
-    print R.state
-    # s = "F(45)+(87)F(68.7386)-(87)-(87)F(68.7386)+(87)F(105)+(87)F(68.7386)+(87)F(105)-(87)-(87)F(105)+(87)F(160.39)-(87)-(87)F(68.7386)+(87)F(105)-(87)-(87)F(105)+(87)F(160.39)+(87)F(105)+(87)F(160.39)-(87)-(87)F(160.39)+(87)F(245)"
-    # R.setState(parseSymbols(s))
-    print R.state
-    R.draw()
-    wait = raw_input("PRESS ENTER TO CONTINUE")
+    # R = RowOfTrees()
+    # R.iterate(2)
+    # print R.state
+    # # s = "F(45)+(87)F(68.7386)-(87)-(87)F(68.7386)+(87)F(105)+(87)F(68.7386)+(87)F(105)-(87)-(87)F(105)+(87)F(160.39)-(87)-(87)F(68.7386)+(87)F(105)-(87)-(87)F(105)+(87)F(160.39)+(87)F(105)+(87)F(160.39)-(87)-(87)F(160.39)+(87)F(245)"
+    # # R.setState(parseSymbols(s))
+    # print R.state
+    # R.draw()
+    # wait = raw_input("PRESS ENTER TO CONTINUE")
