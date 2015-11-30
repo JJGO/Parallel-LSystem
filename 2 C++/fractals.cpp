@@ -95,11 +95,6 @@ void RowOfTrees::substitute(Symbol s, std::vector<Symbol> &string)
 	}
 }
 
-// void substitute(Symbol s, std::vector<Symbol> &string)
-// {
-// 	string.push_back(s);
-// }
-
 double Tree::calculateMetric()
 {
 	double nodes = 0;
@@ -114,15 +109,16 @@ double Tree::calculateMetric()
 	return nodes;
 }
 
-void Tree::updateMetric(std::vector<double> neighbor_metrics)
+void Tree::updateMetric(std::vector<double> &global_metrics, std::vector<int> &neighbors)
 {
 	double average = 0;
-	for(int i = 0 ; i < neighbor_metrics.size() ; i++)
+	for(int i = 0 ; i < neighbors.size() ; i++)
 	{
-		average += neighbor_metrics[i];
+		average += global_metrics[neighbors[i]];
 	}
-	average /= neighbor_metrics.size();
-	probability *= (1+(average - metric)/average);
+	average /= neighbors.size();
+	probability *= (1+(average - metric)/(metric));
+	probability = std::max(0.3,std::min(0.9,probability));
 
 }
 
@@ -135,7 +131,7 @@ MonopodialTree::MonopodialTree()
 	parameters[3] = 45; 	// a2
 	parameters[4] = 137.5; 	// d
 	parameters[5] = 0.707; 	// wr
-	probability = .95;		// probability
+	probability = .9;		// probability
 	double symbol_par[2] = {1,10};
 	Symbol A('A',symbol_par,2);
 	axiom.push_back(A);
@@ -146,7 +142,8 @@ MonopodialTree::MonopodialTree()
 void MonopodialTree::substitute(Symbol s, std::vector<Symbol> &string)
 {
 
-	if( (s == Symbol('A') || s == Symbol('B') || s == Symbol('C') ) && fRand(0,1) <= probability )
+	// if( (s == Symbol('A') || s == Symbol('B') || s == Symbol('C') ) && fRand(0,1) <= probability )
+		if( (s == Symbol('A') || s == Symbol('B') || s == Symbol('C') ) && 0.85 <= probability )
 	{
 		double l = s.getParameters()[0];
 		double w = s.getParameters()[1];

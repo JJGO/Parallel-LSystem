@@ -1,5 +1,12 @@
 #include "lsystem.h"
 
+double pointDistance(Point p, Point q)
+{
+	double x = std::fabs(p.x-q.x);
+	double y = std::fabs(p.y-q.y);
+	return std::pow(x*x+y*y,0.5);
+}
+
 LSystem::LSystem()
 {
 	reset();

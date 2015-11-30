@@ -67,7 +67,7 @@ H.iterate(3)
 print H.state.count('F')
 
 color = 0
-for char in H.state:
+for char in istring+string+string+string+string: #H.state:
 	if char in actions:
 		M = actions[char]
 		S = S.dot(M)

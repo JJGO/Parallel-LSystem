@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <cmath>
 #include "symbol.h"
 
 struct Point {
@@ -10,17 +11,19 @@ struct Point {
     double y;
 };
 
+double pointDistance(Point p, Point q);
+
 class LSystem{
 	friend std::ostream& operator<<(std::ostream& output, const LSystem& s);
 
-	private:
-		int iteration;
+	// private:
 		
 	protected:
 		std::vector<Symbol> axiom;
 		std::vector<Symbol> state;
 
 	public:
+		int iteration;
 		LSystem();
 		LSystem(std::vector<Symbol> axiom);
 		~LSystem(){};

@@ -34,12 +34,12 @@ class Tree : public DLSystem
 {
     protected:
         double metric;
-        double probability;
     public:
+        double probability;
         Tree(){};
         // virtual void substitute(Symbol s, std::vector<Symbol> &string);
         virtual double calculateMetric();
-        virtual void updateMetric(std::vector<double> neighbor_metrics);
+        virtual void updateMetric(std::vector<double> &global_metrics, std::vector<int> &neighbors);
 };
 
 class MonopodialTree : public Tree

@@ -4,7 +4,8 @@
  
 SRC = test
 CC = g++-5.2.0
-CXX = -std=c++11
+CXX = -std=c++11 -fopenmp
+ARGS = 20 15
 HEADERS = symbol.h lsystem.h fractals.h
 OBJECTS = $(SRC).o symbol.o lsystem.o fractals.o
 
@@ -21,5 +22,5 @@ clean:
 	-rm -f $(SRC)
 
 run: $(SRC)
-	./$(SRC)
+	./$(SRC) ${ARGS}
 	
