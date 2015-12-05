@@ -1,0 +1,295 @@
+%% Jose Javier Gonzalez Ortiz %%
+%% Plantilla Latex generica   %%
+%% 2014-11-08                 %%
+
+\usepackage{lipsum} % Package to generate dummy text throughout this template
+
+\usepackage[sc]{mathpazo} % Use the Palatino font
+\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
+\linespread{1.05} % Line spacing - Palatino needs more space between lines
+\usepackage{microtype} % Slightly tweak font spacing for aesthetics
+
+\usepackage[letterpaper,hmarginratio=1:1,top=32mm,left=20mm,right=20mm,columnsep=20pt]{geometry} % Document margins
+\usepackage{multicol} % Used for the two-column layout of the document
+\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{float} % Required for tables and figures in the multi-column environment - they need to be placed in specific locations with the [H] (e.g. \begin{table}[H])
+\usepackage{hyperref} % For hyperlinks in the PDF
+
+\usepackage{lettrine} % The lettrine is the first enlarged letter at the beginning of the text
+\usepackage{paralist} % Used for the compactitem environment which makes bullet points with less space between them
+
+\usepackage{abstract} % Allows abstract customization
+\renewcommand{\abstractnamefont}{\normalfont\bfseries} % Set the "Abstract" text to bold
+\renewcommand{\abstracttextfont}{\normalfont\small\itshape} % Set the abstract itself to small italic text
+
+\usepackage{titlesec} % Allows customization of titles
+% \renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
+% \renewcommand\thesubsection{\Roman{subsection}} % Roman numerals for subsections
+\titleformat{\section}[block]{\large\scshape\centering}{\thesection.}{1em}{} % Change the look of the section titles
+\titleformat{\subsection}[block]{\large}{\thesubsection.}{1em}{} % Change the look of the section titles
+
+\usepackage{fancyhdr} % Headers and footers
+
+
+\usepackage{indentfirst}
+
+% Generic Pakages
+    \usepackage[utf8]{inputenc}                         % For Spanish characters
+    \usepackage[english]{babel}               % Spanish hyphenation and document rules
+    \usepackage{amsmath}                                % Standard math packages
+    \usepackage{graphicx}                               % Image insertion.
+    \usepackage{tikz}
+    \usepackage{caption,subcaption}                     % For custom caption environments
+
+    
+
+    \usepackage{appendix}                               % Enables appendices
+    \usepackage{pdfpages}                               % Insert pdfs
+    \usepackage{array}                                  % Enables array features
+    \usepackage{algorithm}
+    \usepackage[noend]{algpseudocode}
+    \usepackage{eqparbox}
+    \makeatletter
+    \def\BState{\State\hskip-\ALG@thistlm}
+    \makeatother
+    %\usepackage[americanvoltages, europeancurrents, americanresistors, cuteinductors]{circuitikz}                          % Circuit Graphics
+    \usepackage{mathtools}
+    \usepackage{amsthm}
+    
+%Additional Features
+    
+    \usepackage{enumerate}                              % Custom numerate, useful for i,ii,iii... I,II,III...
+    \usepackage{sectsty}                                % Allows customizing section commands
+    \usepackage{todonotes}                              % useful for leaving todonotes
+    \usepackage[space]{grffile}                         % insert files with spaces
+     %\usepackage{microtype}                             % Beatify engine
+    %\usepackage[superscript]{cite}                     % CIting with superscript numerals
+    %\usepackage{xcolor}                                    % Required for inserting color
+    %\usepackage[usenames,dvipsnames]{color}                % Required for custom colors
+    %\usepackage{xargs}                                 % Expanded arguments features
+    %\usepackage{fix-cm}                                 % Computer-Modern at arbitrarysizes
+    \usepackage{siunitx}                               % For SI Units
+    %\usepackage{eurosym}                                % Eurosymbol
+    %\usepackage{pdflscape}                              % enables landscape for pdfs
+    %\usepackage{longtable}                              % Tables than span multipages
+
+% Custom Settings
+    % \decimalpoint                                       % American Decimal Point instead of Spanish comma
+
+    % Margins
+    %     \topmargin      = -0.45in
+    %     \evensidemargin = 0in
+    %     \oddsidemargin  = 0in
+    %     \textwidth      = 6.5in
+    %     \textheight     = 9.0in
+    %     \headsep        = 0.25in
+
+    % \pagestyle{fancy}
+    % \lhead{\HWAuthorName}
+    % \chead{}
+    % \rhead{\HWClass : \HWTitle}
+    % \lfoot{}
+    % \cfoot{\thepage}
+    % \rfoot{}
+    
+    % \renewcommand\headrulewidth{0.4pt} % Size of the header rule
+    % \renewcommand\footrulewidth{0.4pt} % Size of the footer rule
+
+    \numberwithin{equation}{section} % Number equations within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+    \numberwithin{figure}{section} % Number figures within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+    \numberwithin{table}{section} % Number tables within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+
+    \renewcommand{\labelitemi}{$\bullet$}                       %%bullet1 circle
+    \renewcommand{\labelitemii}{\leavevmode \hbox to
+    1.2ex {\hss \vrule height .9ex width .7ex depth -.2ex\hss }} %%bullet2 box
+
+    \newcommand{\ul}[1]        {\underline{\smash{#1}}}         %%closer underline
+    \newcommand{\gm}[1]         {\guillemotleft #1\guillemotright}  %$ pretty <<sth>>$
+
+    \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+    \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                             CODIGO                                         %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Code insertion
+    \usepackage{listings}                               % Main package for inserting code
+    \usepackage{courier}                                % For using the courier font
+
+    \AtBeginDocument{\numberwithin{lstlisting}{section}}  % Number listings within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+    
+    %%\captionsetup[lstlisting]{font={small,tt}}            %  Listings Font Size
+    
+    % \renewcommand{\lstlistingname}{Código}              % For Codigo caption (requires caption package)
+
+    \definecolor{background}{gray}{.98}                 % Background color definition
+    \definecolor{comments}{RGB}{51,102,0}               % Comments   color definition
+    \definecolor{keywords}{RGB}{0,0,120}                % Keywords   color definition
+    \definecolor{keywords2}{RGB}{204,0,102}             % Keywords2  color definition
+    \definecolor{numbers}{RGB}{127, 0, 127}             % Keywords2  color definition
+
+    \definecolor{Maroon}{RGB}{128, 0, 0}
+
+       % morekeywords={add,sub,mul,mulu,nand,sll,sra,srl,sltu,addi,sw,lw,beq,jarl,lui},
+    \lstdefinelanguage{ICAI-RiSC-16}
+   {morekeywords={add,sub,mul,mulu,nand,sll,sra,srl,sltu,addi,sw,lw,beq,jalr,lui,la,med},
+        sensitive=false,
+        morecomment=[l]{\#},
+        morecomment=[l][\color{Maroon}]{.},
+        morekeywords=[2]{r0, r1, r2, r3, r4, r5, r6, r7},
+        keywordstyle=[2]{\color{violet}},
+        % literate=%
+        %    *{0}{{{\color{red!20!violet}0}}}1
+        %     {1}{{{\color{red!20!violet}1}}}1
+        %     {2}{{{\color{red!20!violet}2}}}1
+        %     {3}{{{\color{red!20!violet}3}}}1
+        %     {4}{{{\color{red!20!violet}4}}}1
+        %     {5}{{{\color{red!20!violet}5}}}1
+        %     {6}{{{\color{red!20!violet}6}}}1
+        %     {7}{{{\color{red!20!violet}7}}}1
+        %     {8}{{{\color{red!20!violet}8}}}1
+        %     {9}{{{\color{red!20!violet}9}}}1
+        %morecomment=[s]{/*}{*/},
+        %morestring=[b]"
+    }
+
+
+    \lstset{
+        frame=Ltb,
+        framerule=0pt,
+        aboveskip=0.5cm,
+        framextopmargin=3pt,
+        framexbottommargin=3pt,
+        framexleftmargin=0.4cm,
+        framesep=0pt,
+        rulesep=.4pt,
+        backgroundcolor=\color{background},
+        rulesepcolor=\color{black},
+        rulecolor=\color{black},
+        %
+        stringstyle=\ttfamily,
+        basicstyle=\small\ttfamily,
+        commentstyle=\itshape\color{comments},
+        keywordstyle=\bfseries\color{keywords},
+        %
+        numberstyle=\tiny,
+        numbers=left,
+        numbersep=15pt,
+        numberfirstline = false,
+        %
+        breakatwhitespace=false,         % sets if automatic breaks should only happenat whitespace
+        breaklines=true,                 % sets automatic line breaking
+        captionpos=b,                    % sets the caption-position to bottom
+        escapeinside={<@}{@>},            % if you want to add LaTeX within your code
+        keepspaces=true,                 % keeps spaces in text, useful for keepingindentation of code (possibly needs columns=flexible)
+        showspaces=false,                % show spaces everywhere adding particularunderscores; it overrides 'showstringspaces'
+        showstringspaces=false,          % underline spaces within strings only
+        showtabs=false,                  % show tabs within strings adding particularunderscores
+        stepnumber=1,                    % the step between two line-numbers. If it's1, each line will be numbered
+        tabsize=2,                       % sets default tabsize to 2 spaces
+    }
+    
+
+    \lstdefinestyle{customvhdl}{
+        language=vhdl,                              % Language
+        morekeywords = {},
+        morestring=[b][\color{numbers}]',
+        morestring=[b][\color{numbers}]",
+        emph={std_logic,std_logic_vector,integer,unsigned,to_unsigned},
+        emphstyle={\color{keywords2}\bfseries},%
+        %deletekeywords={...},            % if you want to delete keywords from the given language
+    }
+
+    \lstdefinestyle{customcpp}{
+        language = C++,
+       %  directivestyle={\color{black}}
+       % emph={int,char,double,float,unsigned},
+       % emphstyle={\color{blue}}
+    }
+
+    \lstset{style = customcpp}
+
+
+
+    % Grey scale definitions - Printing
+    %\definecolor{background}{gray}{.98}
+    %\definecolor{comments}{gray}{.45}
+    %\definecolor{keywords}{gray}{.25}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%       HERE BE DRAGONS        %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Paragraph separation
+%\setlength{\parskip}{.5em}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Table separation
+%\renewcommand{\arraystretch}{1.3}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% 9+ Arguments functions
+%\newcommand{\function}[9]{%
+%        \def\tempa{#1}%
+%        \def\tempb{#2}%
+%        \def\tempc{#3}%
+%        \def\tempd{#4}%
+%        \def\tempe{#5}%
+%        \def\tempf{#6}%
+%        \def\tempg{#7}%
+%        \def\temph{#8}%
+%        \def\tempi{#9}%
+%        \functioncont
+%    }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Rules for longtable
+%\newcommand{\mytoprule}{\specialrule{1.5pt}{0em}{0em}}
+%\newcommand{\mymidrule}{\specialrule{.75pt}{0em}{0em}}
+%\newcommand{\mybottomrule}{\specialrule{1.5pt}{0em}{0em}}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Roman numerals at the start
+%
+%\pagenumbering{roman}
+%\tableofcontents
+%\newpage
+%\listoftables
+%\newpage
+%\pagenumbering{arabic}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% More than 18 floating figures/tables - force to put
+%\clearpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Landscape tables recommendations
+%\topmargin      = -0.95in
+%\evensidemargin = 0in
+%\oddsidemargin  = 0in
+%\textwidth      = 6.5in %6.5in
+%\textheight     = 9.75in
+%\headsep        = 0.25in
+%\small  % Switch from 12pt to 11pt
+%\setlength\LTleft{0pt}            % default: \parindent
+%\setlength\LTright{0pt}           % default: \fill
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Bold columns table
+%>{\bfseries\arraybackslash}m{1.1in}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% \epigraph{}
+%
+%\makeatletter
+%\patchcmd{\epigraph}{\@epitext{#1}}{\itshape\@epitext{#1}}{}{}
+%\makeatother
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Quotes -> chapquote enviroment
+%\makeatletter
+%\newenvironment{chapquote}[2][2em]
+%  {\setlength{\@tempdima}{#1}%
+%   \def\chapquote@author{#2}%
+%   \parshape 1 \@tempdima \dimexpr\textwidth-2\@tempdima\relax%
+%   \itshape}
+%  {\par\normalfont\hfill--\ \chapquote@author\hspace*{\@tempdima}\par\bigskip}
+%\makeatother
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
