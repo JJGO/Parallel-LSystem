@@ -183,21 +183,39 @@ In a similar fashion as \cite{KurthSloboda2002} did, we can employ  both the glo
 \section{Parallelization} % (fold)
 \label{sec:parallelization}
 
-When looking at a decently sized forest ($N \approx 100$) and a considerable number of iterations ($k \approx 14$), the serial implementation starts taking seconds on most modern machines. Trying to increase any of the parameters goes to the domain of minutes and even hours. Therefore, the problem can use parallelization techniques in order to reduce the computation time by introducing more processing power. For this analysis we have chosen a shared memory architecture using the OpenMP application programming interface in C++. In this paper we are going to focus in the parallelization of the derivation step for the interdependant system described in Section \ref{sec:interdependence}. \phantom{This is}
+When looking at a decently sized group of L-Systems ($N \approx 100$) and a considerable number of iterations ($k \approx 14$), the serial implementation starts taking seconds on most modern machines. Trying to increase any of the parameters goes to the domain of minutes and even hours. Therefore, the problem can use parallelization techniques in order to reduce the computation time by introducing more processing power. For this analysis we have chosen a shared memory architecture using the OpenMP application programming interface in C++. In this paper we are going to focus in the parallelization of the derivation step for the interdependant system described in Section \ref{sec:interdependence}.
 
 The interpretation step of multiple L-Systems is an inherently embarrassingly parallel problem since all of the systems are independent when it comes to interpretation. To further optimize the parallelization of the interpretation step, one can look at parallelizing the interpretation of an individual L-System. This can be easily done for \emph{non-branching} systems by replacing each symbol with its associated affine transformation (4x4 matrix). Since matrix multiplication is an associative operation we can easily solve the problem by using a \emph{reduce} function. \emph{Branching} systems can follow a similar approach but the complexity escapes the scope of the current paper. A more  detailed explanation can be found in \cite{LIPP-2010-PGMS}.
 
 \subsection{Naive parallelization} % (fold)
 \label{sub:naive_parallelization}
 
-A initial naive parallelization can be used by just simply parallelizing each one of the derivation iteration steps. Using a dynamic scheduling algorithm, the different processor will evenly split the work and solve each iteration in parallel. As we shall see later in Section \ref{sec:results}, this approach decreases the overall time but is far from perfect. The main disadvantage associated with this approach comes from the fact that a barrier must be set up at the end of each iteration to ensure correctness. This will imply that for $p$ processors and $N$ similarly sized trees, at the end of each iteration approximately $r \equiv N \mod p$ processors will be still working and $N - r$ will be idle, waiting for the rest to finish and wasting processing power.
+A initial naive parallelization can be used by just simply parallelizing each one of the derivation iteration steps. Using a dynamic scheduling algorithm, the different processor will evenly split the work and solve each iteration in parallel. As we shall see later in Section \ref{sec:results}, this approach decreases the overall time but is far from perfect. The main disadvantage associated with this approach comes from the fact that a barrier must be set up at the end of each iteration to ensure correctness. This will imply that for $p$ processors and $N$ similarly sized trees, at the end of each iteration approximately $r \equiv N \mod p$ processors will be still working and $p - r$ will be idle, waiting for the rest to finish and wasting processing power. On average, this means that half of the processors will be idle for approximately $\frac{1}{\ceil{N/p}}$ part of the time.
+
+Furthermore, using a \emph{barrier} in the algorithm incurs in a great overhead since all threads will be synchronized after each iteration. Therefore, if we want to optimize the algorithm we will need to reduce this communication to a minimum.
 
 % subsection naive_parallelization (end)
+
+\subsection{Neighbor checking} % (fold)
+\label{sub:neighbor_checking}
+
+\todo[inline]{Implement this and describe the results}
+
+% subsection neighbor_checking (end)
+
+\subsection{Connected components} % (fold)
+\label{sub:connected_components}
+
+A further optimization can be made. The main disadvantage of the solution proposed in section \ref{sub:connected_components} comes from the fact that it introduces \todo[inline]{What is the problem, connected components or neighbor locks?}
+
+% subsection connected_components (end)
 
 % section parallelization (end)
 
 \section{Results} % (fold)
 \label{sec:results}
+
+In this specific
 
 % section results (end)
 

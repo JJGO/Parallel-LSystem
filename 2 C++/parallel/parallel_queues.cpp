@@ -12,11 +12,9 @@
 // #define R 3
 
 char* gettime(char *buffer);
-double fRand(double lower_bound, double upper_bound);
 
 std::vector< std::vector<int> > get_connected_components(int size, std::vector<std::vector<int> > &neighbors);
 void print_connected_components(std::vector<std::vector<int> > connected_components);
-
 int main(int argc, char const *argv[])
 {
 	char* s;
@@ -41,10 +39,9 @@ int main(int argc, char const *argv[])
 	int iterations = strtol(argv[2], &s, 10);
 
 	double SIDE = std::sqrt(forestSize);
-	double R = fRand(1,std::sqrt(SIDE));
-	printf("SIDE = %lf, R = %lf\n",SIDE,R);
+	SIDE = fRand(std::sqrt(SIDE),std::sqrt(2)*SIDE);
+	double R = 1;
 
-	std::cout << "Running " << forestSize << " trees for " << iterations << " iterations" << std::endl;
 	double begin, end;
 
 	std::vector<int> empty;
@@ -53,15 +50,19 @@ int main(int argc, char const *argv[])
 	std::vector< std::vector<int> > neighbors(forestSize,empty);
 	std::vector<double> metrics(forestSize,0.0);
 
-
+	int num_threads;
 
 	begin = omp_get_wtime(); //PARALLELO
-	#pragma omp parallel shared(Forest,neighbors,metrics)
+	#pragma omp parallel shared(Forest,neighbors,metrics,num_threads)
 	{
 		#pragma omp master
 		{
 			// INIT VARIABLES
 			std::vector<Point> positions;
+
+			num_threads = omp_get_num_threads();
+			std::cout << "Running " << forestSize << " trees for " << iterations << " iterations on " << num_threads << " processors" << std::endl;
+			printf("SIDE = %lf, R = %lf\n",SIDE,R);
 			
 			for(int i = 0; i < forestSize; i++)
 			{
@@ -86,6 +87,8 @@ int main(int argc, char const *argv[])
 		}
 
 		#pragma omp barrier
+
+		int thread_num = omp_get_thread_num();
 		// ITERATE
 
 		for(int j = 0 ; j < iterations ; j++)
@@ -115,23 +118,38 @@ int main(int argc, char const *argv[])
 
 	end = omp_get_wtime(); //PARALLELO
 
-	// for(int i = 0; i < Forest.size() ; i++)
-	// {
-	// 	printf("%02d %02d %2lf %5lf : ",i,Forest[i]->iteration, Forest[i]->probability, metrics[i] );
-	// 	for(int j = 0 ; j < neighbors[i].size(); j++)
-	// 	{
-	// 		std::cout << neighbors[i][j] << " ";
-	// 	}
-	// 	std::cout << std::endl;
+	for(int i = 0; i < Forest.size() ; i++)
+	{
+		printf("%02d %02d %2lf %5lf : ",i,Forest[i]->iteration, Forest[i]->probability, metrics[i] );
+		for(int j = 0 ; j < neighbors[i].size(); j++)
+		{
+			std::cout << neighbors[i][j] << " ";
+		}
+		std::cout << std::endl;
 		
-	// }
+	}
 	
-	
-	print_connected_components(get_connected_components(forestSize,neighbors));
+	std::vector< std::vector<int> > connected_components = get_connected_components(forestSize,neighbors);
+	// print_connected_components( connected_components);
 
 
+	char buffer[80];
 
-	printf("Time : %f seconds\n", end-begin);
+	FILE *f = fopen("parallel_queues.txt", "a");
+	if(f != NULL)
+	{
+	    fprintf(f, "%s\n", gettime(buffer));
+	    fprintf(f,"%d threads\n",num_threads);
+	    fprintf(f,"%d trees\n",forestSize);
+	    fprintf(f,"%d iterations\n",iterations);
+	    for(int i = 0; i < connected_components.size(); i++)
+	    {
+	    	fprintf(f, "%d ", connected_components[i].size());
+	    }
+	    fprintf(f, "\n");
+	    fprintf(f,"Time : %f seconds\n", end-begin);
+	    fprintf(f,"\n=====================\n");
+	}
 
 	for(int i = 0; i < Forest.size() ; i++)
 	{
@@ -140,6 +158,7 @@ int main(int argc, char const *argv[])
 
 	return 0;
 }
+
 
 
 char* gettime(char* buffer)
@@ -209,10 +228,4 @@ void print_connected_components(std::vector< std::vector<int> > connected_compon
 		printf("\n");
 	}
 	return;
-}
-
-double fRand(double lower_bound, double upper_bound)
-{
-    double f = (double)rand() / (double)RAND_MAX;
-    return lower_bound + f * (upper_bound - lower_bound);
 }

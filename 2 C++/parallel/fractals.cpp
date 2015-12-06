@@ -1,6 +1,12 @@
 #include "fractals.h"
 #include <cmath>
 
+double fRand(double lower_bound, double upper_bound)
+{
+    double f = (double)rand() / (double)RAND_MAX;
+    return lower_bound + f * (upper_bound - lower_bound);
+}
+
 KochCurve::KochCurve()
 {
 	Symbol F('F');
@@ -142,8 +148,8 @@ MonopodialTree::MonopodialTree()
 void MonopodialTree::substitute(Symbol s, std::vector<Symbol> &string)
 {
 
-	// if( (s == Symbol('A') || s == Symbol('B') || s == Symbol('C') ) && fRand(0,1) <= probability )
-		if( (s == Symbol('A') || s == Symbol('B') || s == Symbol('C') ) && 0.85 <= probability )
+	if( (s == Symbol('A') || s == Symbol('B') || s == Symbol('C') ) && fRand(0,1) <= probability )
+		// if( (s == Symbol('A') || s == Symbol('B') || s == Symbol('C') ) && 0.85 <= probability )
 	{
 		double l = s.getParameters()[0];
 		double w = s.getParameters()[1];
