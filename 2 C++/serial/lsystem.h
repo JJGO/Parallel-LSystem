@@ -28,7 +28,8 @@ class LSystem{
 		LSystem(std::vector<Symbol> axiom);
 		~LSystem(){};
 
-		std::vector<Symbol> getState() const;
+		std::vector<Symbol> getState() const{return state;}
+		int getIteration() const {return iteration;}
 		virtual void substitute(Symbol s, std::vector<Symbol> &string);
 		void reset();
 		void next();

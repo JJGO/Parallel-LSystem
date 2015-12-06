@@ -18,11 +18,6 @@ LSystem::LSystem(std::vector<Symbol> ax)
 	reset();
 }
 
-std::vector<Symbol> LSystem::getState() const
-{
-	return state;
-}
-
 void LSystem::reset()
 {
 	state = axiom;
@@ -31,13 +26,13 @@ void LSystem::reset()
 
 void LSystem::next()
 {
-	iteration++;
 	std::vector<Symbol> new_state;
 	for( int i = 0; i < state.size() ; i++)
 	{
 		substitute(state[i],new_state);
 	}
 	state = new_state;
+	iteration++;
 }
 
 void LSystem::iterate(int n)

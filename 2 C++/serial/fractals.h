@@ -3,6 +3,8 @@
 
 #include "lsystem.h"
 
+double fRand(double lower_bound, double upper_bound);
+
 class KochCurve : public LSystem
 {
     public:

@@ -1,53 +1,51 @@
-#include <iostream>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <vector>
-#include <array>
-#include <ctime>
-#include "fractals.h"
-
-#define SIDE 5
-#define R 3
-
-char* gettime(char *buffer);
+#include "main.h"
 
 int main(int argc, char const *argv[])
 {
 	char* s;
+	std::srand(std::time(0)); //use current time as seed for random generator
+	int r = rand() % 1000;
+	for(int i = 0; i < r; i++)
+	{
+		rand();
+	}
 	if(argc < 3)
 	{
 		return 1;
 	}
 	int forestSize = strtol(argv[1], &s, 10);
 	int iterations = strtol(argv[2], &s, 10);
+
+	double SIDE = std::sqrt(forestSize);
+	SIDE = fRand(std::sqrt(SIDE),std::sqrt(2)*SIDE);
+	double R = 1;
+
 	std::cout << "Running " << forestSize << " trees for " << iterations << " iterations" << std::endl;
 	std::srand(std::time(0)); //use current time as seed for random generator
 
+	std::vector<int> empty;
+
 	std::vector<Tree*> Forest;
-	std::vector<std::vector<int>> neighbors;
-	std::vector<double> metrics;
+	std::vector< std::vector<int> > neighbors(forestSize,empty);
+	std::vector<double> metrics(forestSize,0.0);
 
 	clock_t begin, end;
     double time_spent;
 
     begin = clock();
 
-
+    printf("SIDE = %lf, R = %lf\n",SIDE,R);
 	
 	// INIT VARIABLES
 	std::vector<Point> positions;
-	std::vector<int> empty;
 	for(int i = 0; i < forestSize; i++)
 	{
-		double x = (SIDE-1)*std::sin(i);//fRand(0,SIDE);
-		double y = SIDE*std::cos(i*i);//fRand(0,SIDE);
+		double x = fRand(0,SIDE);
+		double y = fRand(0,SIDE);
 		Point p = {x,y};
 		Tree *T = new MonopodialTree();
 		Forest.push_back(T);
 		positions.push_back(p);
-		metrics.push_back(0);
-		neighbors.push_back(empty);
 		for(int j = 0 ; j < i ; j++)
 		{
 			Point q = positions[j];
@@ -66,7 +64,6 @@ int main(int argc, char const *argv[])
 		for(int i = 0; i < Forest.size() ; i++)
 		{
 			Forest[i]->next();
-			// std::cout << Forest[i] << std::endl;
 			metrics[i] = Forest[i]->calculateMetric();
 		}
 
@@ -74,26 +71,33 @@ int main(int argc, char const *argv[])
 		for(int i = 0; i < Forest.size() ; i++)
 		{
 			Forest[i]->updateMetric(metrics,neighbors[i]);
-			// std::cout << j << " " << i << " " << metrics[i] << std::endl;
 		}
 	}
-
-
-
-	for(int i = 0; i < Forest.size() ; i++)
-	{
-		printf("%02d %02d %2lf %5lf : ",i,Forest[i]->iteration, Forest[i]->probability, metrics[i] );
-		for(int j = 0 ; j < neighbors[i].size(); j++)
-		{
-			std::cout << neighbors[i][j] << " ";
-		}
-		std::cout << std::endl;
-		
-	}
-
 	end = clock();
-	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-	printf("\nTIME : %lf seconds\n", time_spent);
+
+	print_forest(Forest, neighbors, metrics);
+	
+	std::vector< std::vector<int> > connected_components = get_connected_components(neighbors);
+	print_connected_components( connected_components);
+
+	char buffer[80];
+
+	FILE *f = fopen("../parallel/Results_serial.txt", "a");
+	if(f != NULL)
+	{
+	    fprintf(f, "%s\n", gettime(buffer));
+	    fprintf(f,"%d threads\n",1);
+	    fprintf(f,"%d trees\n",forestSize);
+	    fprintf(f,"%d iterations\n",iterations);
+	    for(int i = 0; i < connected_components.size(); i++)
+	    {
+	    	fprintf(f, "%d ", connected_components[i].size());
+	    }
+	    fprintf(f, "\n");
+	    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	    fprintf(f,"Time : %f seconds\n", time_spent);
+	    fprintf(f,"\n=====================\n");
+	}
 
 	for(int i = 0; i < Forest.size() ; i++)
 	{
@@ -101,19 +105,4 @@ int main(int argc, char const *argv[])
 	}
 
 	return 0;
-}
-
-
-char* gettime(char* buffer)
-{
-    time_t rawtime;
-    struct tm * timeinfo;
-    
-    time (&rawtime);
-    timeinfo = localtime(&rawtime);
-
-    strftime(buffer,80,"%Y-%m-%d %I:%M:%S",timeinfo);
-    std::string str(buffer);
-
-    return buffer;
 }

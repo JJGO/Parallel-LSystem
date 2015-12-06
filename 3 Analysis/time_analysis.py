@@ -9,19 +9,23 @@ from collections import defaultdict
 
 # figsize = layout.figaspect(scale=1.2)
 
-ps = [1,2,4]
+# ps = [1,2,4,8]
 
 stored_avs = {}
 components = []
 n_components = defaultdict(int)
 # paths_explored = { p : [] for p in ps}
 
-modes = ["parallel_naive"]
+modes = ["serial","naive","lookahead"]
 for mode in modes:
+    if mode == "serial":
+        ps = [1]
+    else:
+        ps = [1,2,4,8]
     times = { p : [] for p in ps}
 
     print mode
-    with open("../2 C++/%s.txt" % mode,'r') as f:
+    with open("../2 C++/parallel/Results_%s.txt" % mode,'r') as f:
         while(f.readline()):
             p = int(f.readline().split()[0])
             n = int(f.readline().split()[0])
@@ -77,17 +81,18 @@ for mode in modes:
 # for C in ns:
 
 properties = {
-    modes[0] : ('r.-','Naive Parallel')
+    "naive" : ('r.-','Naive Parallel'),
+    "lookahead" : ('b.-','Parallel Lookahead'),
 }
 
 fig = pyplot.figure()
 ax = fig.add_subplot(111)
 ax.plot(ps,ps, 'g.-',label='Ideal')
 
-for mode in modes:
+for mode in modes[1:]:
     color, label = properties[mode]
     avs = stored_avs[mode]
-    ax.plot(ps,[avs[1]/avs[p] for p in ps], color,label=label)
+    ax.plot(ps,[stored_avs['serial'][1]/avs[p] for p in ps], color,label=label)
 
 pyplot.xlabel('Processors')
 pyplot.ylabel('SpeedUp')
@@ -103,10 +108,10 @@ fig = pyplot.figure()
 ax = fig.add_subplot(111)
 ax.plot(ps,[1]*len(ps), 'g.-',label="Ideal")
 
-for mode in modes:
+for mode in modes[1:]:
     color, label = properties[mode]
     avs = stored_avs[mode]
-    ax.plot(ps,[avs[1]/avs[p]/p for p in ps], color,label=label)
+    ax.plot(ps,[stored_avs['serial'][1]/avs[p]/p for p in ps], color,label=label)
 
 pyplot.xlabel('Processors')
 pyplot.ylabel('Efficiency')

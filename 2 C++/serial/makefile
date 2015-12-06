@@ -4,7 +4,7 @@
  
 SRC = serial
 CC = g++-5.2.0
-CXX = -std=c++11
+CXX = -std=c++11 -O3
  # -fopenmp
 ARGS = 20 15
 HEADERS = symbol.h lsystem.h fractals.h

@@ -26,8 +26,6 @@ class Symbol{
 
 };
 
-double fRand(double fMin, double fMax);
-
 #endif
 
 
