@@ -8,14 +8,17 @@ CFLAGS =
 # -std=c++11
 HEADERS = symbol.h lsystem.h fractals.h
 OBJECTS = symbol.o lsystem.o fractals.o
-TARGETS = naive lookahead
+TARGETS = naive dynamicahead connected
 
 all: $(TARGETS)
 
 naive:  naive.o $(OBJECTS)
 	$(CC) -fopenmp $(CFLAGS) $^ -o $@
 
-lookahead:  lookahead.o $(OBJECTS)
+dynamicahead:  dynamicahead.o $(OBJECTS)
+	$(CC) -fopenmp $(CFLAGS) $^ -o $@
+
+connected:  connected.o $(OBJECTS)
 	$(CC) -fopenmp $(CFLAGS) $^ -o $@
 
 .cpp.o:
@@ -24,10 +27,5 @@ lookahead:  lookahead.o $(OBJECTS)
 clean:
 	-rm -f *.o
 	-rm -f $(TARGETS)
-	-rm -f *.txt
-
-test:
-	./test.sh naive 10 100 10
-	./test.sh lookahead 10 100 10
 
 	

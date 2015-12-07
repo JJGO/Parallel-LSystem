@@ -1,5 +1,7 @@
 #include "main.h"
 
+std::vector<int> get_order(std::vector< std::vector<int> > &neighbors);
+
 int main(int argc, char const *argv[])
 {
 	char* s;
@@ -19,6 +21,7 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 	
+	
 	int forestSize = strtol(argv[1], &s, 10);
 	int iterations = strtol(argv[2], &s, 10);
 
@@ -32,19 +35,21 @@ int main(int argc, char const *argv[])
 
 	std::vector<Tree*> Forest;
 	std::vector< std::vector<int> > neighbors(forestSize,empty);
-	std::vector<double> metrics(forestSize,0.0);
+	std::vector< std::vector<double> > metrics(iterations,std::vector<double>(forestSize,0.0));
 
+	//Parallel variables
 	int num_threads;
-///// PARALLEL BLOCK
+	std::vector<int> order;
+
 	begin = omp_get_wtime();
-	#pragma omp parallel shared(Forest,neighbors,metrics,num_threads)
+	#pragma omp parallel shared(Forest,neighbors,metrics,forestSize,iterations,order)
 	{
+		
 		#pragma omp master
 		{
 			// INIT VARIABLES
-			std::vector<Point> positions;
-
 			num_threads = omp_get_num_threads();
+			std::vector<Point> positions;
 			std::cout << "Running " << forestSize << " trees for " << iterations << " iterations on " << num_threads << " processors" << std::endl;
 			
 			for(int i = 0; i < forestSize; i++)
@@ -66,48 +71,69 @@ int main(int argc, char const *argv[])
 						neighbors[i].push_back(j);
 					}
 				}
+				order = get_order(neighbors);
 			}
+
+			
 		}
 
 		#pragma omp barrier
 
+		int N = forestSize;
+		int T = iterations;
+		// int s = forestSize / num_threads;
 		int thread_num = omp_get_thread_num();
 		// ITERATE
-		// int processed = 0;//DEBUG
-		
-		// int s = forestSize / num_threads;
-		for(int j = 0 ; j < iterations ; j++)
+		#pragma omp for schedule(dynamic)
+		for(int x = 0; x < N*T; x++)
 		{
-			#pragma omp for schedule(dynamic)
-			for(int i = 0; i < Forest.size() ; i++)
+			int i = order[x%N];
+			int j = x/N;
+
+			while(Forest[i]->iteration < j);
+			bool ready = false;
+			while(!ready)
 			{
-				Forest[i]->next();
-				double metric = Forest[i]->calculateMetric();
-				metrics[i] = metric;
-				// processed++;//DEBUG
-				// printf("Proc %d working on tree %02d iteration %02d : %lf\n",omp_get_thread_num(),i,j,metrics[i] ); //VERBOSE
+				ready = true;
+				for(int k = 0; k < neighbors[i].size() ; k++)
+				{
+					if( Forest[ neighbors[i][k] ]->iteration < j)
+					{
+						ready = false;
+						break;
+					}
+				}
 			}
 
-			#pragma omp for schedule(dynamic)
-			for(int i = 0; i < Forest.size() ; i++)
+			if(j > 0)
 			{
-				Forest[i]->updateMetric(metrics,neighbors[i]);
+				Forest[i]->updateMetric(metrics[j-1],neighbors[i]);
 			}
-			// printf("Proc %d FINISHED iteration %02d\n",omp_get_thread_num(),j ); //VERBOSE
+			Forest[i]->next();
+			double metric = Forest[i]->calculateMetric();
+			// #pragma omp critical(metrics)
+			// {
+				metrics[j][i] = metric;
+			// }
 		}
+
 		// printf("%d %d\n",thread_num,processed); //DEBUG
+
 	}
-///// PARALLEL BLOCK
+
+
 	end = omp_get_wtime();
-
+	
 	std::vector< std::vector<int> > connected_components = get_connected_components(neighbors);
-	// print_forest(Forest, neighbors, metrics); // VERBOSE
-	// print_connected_components( connected_components); // VERBOSE
-
+	// for(int i = 0; i < order.size(); i++) //VERBOSE
+	// 	std::cout << order[i] << " "; //VERBOSE
+	// std::cout << std::endl; //VERBOSE
+	// print_forest(Forest, neighbors, metrics[iterations-1]); //VERBOSE
+	// print_connected_components( connected_components); //VERBOSE
 
 	char buffer[80];
 
-	FILE *f = fopen("Results_naive.txt", "a");
+	FILE *f = fopen("Results_dynamicahead.txt", "a");
 	if(f != NULL)
 	{
 	    fprintf(f, "%s\n", gettime(buffer));
@@ -131,3 +157,40 @@ int main(int argc, char const *argv[])
 
 	return 0;
 }
+
+std::vector<int> get_order(std::vector< std::vector<int> > &neighbors)
+{
+	std::vector<int> order( neighbors.size(), 0);
+	std::queue<int> next_nodes;
+	int nodes_visited = 0;
+	std::vector<bool> explored(neighbors.size(),false);
+	int i = 0,j=0;
+	while(nodes_visited < neighbors.size() )
+	{
+		while(explored[i])
+		{
+			i++;
+		}
+		next_nodes.push(i);
+		explored[i] = true;
+		order[nodes_visited++] = i;
+		while(!next_nodes.empty())
+		{
+			int v = next_nodes.front();
+			next_nodes.pop();
+			for(int k = 0 ; k < neighbors[v].size() ; k++)
+			{
+				int w = neighbors[v][k];
+				if(!explored[w])
+				{
+					explored[w] = true;
+					order[nodes_visited++] = w;
+					next_nodes.push(w);
+				}
+			}
+		}
+		j++;
+	}
+	return order;
+}
+

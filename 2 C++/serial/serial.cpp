@@ -33,8 +33,6 @@ int main(int argc, char const *argv[])
     double time_spent;
 
     begin = clock();
-
-    printf("SIDE = %lf, R = %lf\n",SIDE,R);
 	
 	// INIT VARIABLES
 	std::vector<Point> positions;
@@ -75,10 +73,9 @@ int main(int argc, char const *argv[])
 	}
 	end = clock();
 
-	print_forest(Forest, neighbors, metrics);
-	
 	std::vector< std::vector<int> > connected_components = get_connected_components(neighbors);
-	print_connected_components( connected_components);
+	// print_forest(Forest, neighbors, metrics); //VERBOSE
+	// print_connected_components( connected_components); //VERBOSE
 
 	char buffer[80];
 
@@ -89,6 +86,7 @@ int main(int argc, char const *argv[])
 	    fprintf(f,"%d threads\n",1);
 	    fprintf(f,"%d trees\n",forestSize);
 	    fprintf(f,"%d iterations\n",iterations);
+	    fprintf(f,"%lf %lf\n",SIDE,R);
 	    for(int i = 0; i < connected_components.size(); i++)
 	    {
 	    	fprintf(f, "%d ", connected_components[i].size());

@@ -51,7 +51,6 @@ int main(int argc, char const *argv[])
 			num_threads = omp_get_num_threads();
 			std::vector<Point> positions;
 			std::cout << "Running " << forestSize << " trees for " << iterations << " iterations on " << num_threads << " processors" << std::endl;
-			printf("SIDE = %lf, R = %lf\n",SIDE,R);
 			
 			for(int i = 0; i < forestSize; i++)
 			{
@@ -72,29 +71,28 @@ int main(int argc, char const *argv[])
 						neighbors[i].push_back(j);
 					}
 				}
+				order = get_order(neighbors);
 			}
 
-			order = get_order(neighbors);
-			for(int i = 0; i < order.size(); i++)
-				std::cout << order[i] << " ";
-			std::cout << std::endl;
+			
 		}
 
 		#pragma omp barrier
 
 		int thread_num = omp_get_thread_num();
 		// ITERATE
-		
 
 		int N = forestSize;
 		int T = iterations;
 		int P = omp_get_num_threads();
 		int x = thread_num;
 		int y = 0;
+		// int processed = 0;//DEBUG
 		while( x+N*y < N*T)
 		{
+			// processed++;//DEBUG
 			int i = order[x];
-			// printf("%d (%d, %d)\n",thread_num,y,i );
+			// printf("%d (%ds, %d)\n",thread_num,y,i );
 
 			while(Forest[i]->iteration < y);
 			bool ready = false;
@@ -113,14 +111,14 @@ int main(int argc, char const *argv[])
 
 			if(y > 0)
 			{
-				Forest[i]->updateMetric(metrics[y],neighbors[i]);
+				Forest[i]->updateMetric(metrics[y-1],neighbors[i]);
 			}
 			Forest[i]->next();
 			double metric = Forest[i]->calculateMetric();
-			#pragma omp critical(metrics)
-			{
+			// #pragma omp critical(metrics)
+			// {
 				metrics[y][i] = metric;
-			}
+			// }
 
 			x+=P;
 			if(x >= N)
@@ -131,16 +129,19 @@ int main(int argc, char const *argv[])
 			
 			
 		}
-		
+		// printf("%d %d\n",thread_num,processed); //DEBUG
 
 	}
 
+
 	end = omp_get_wtime();
 	
-	print_forest(Forest, neighbors, metrics[iterations-1]);
-
 	std::vector< std::vector<int> > connected_components = get_connected_components(neighbors);
-	print_connected_components( connected_components);
+	// for(int i = 0; i < order.size(); i++) //VERBOSE
+	// 	std::cout << order[i] << " "; //VERBOSE
+	// std::cout << std::endl; //VERBOSE
+	// print_forest(Forest, neighbors, metrics[iterations-1]); //VERBOSE
+	// print_connected_components( connected_components); //VERBOSE
 
 	char buffer[80];
 
@@ -151,6 +152,7 @@ int main(int argc, char const *argv[])
 	    fprintf(f,"%d threads\n",num_threads);
 	    fprintf(f,"%d trees\n",forestSize);
 	    fprintf(f,"%d iterations\n",iterations);
+	    fprintf(f,"%lf %lf\n",SIDE,R);
 	    for(int i = 0; i < connected_components.size(); i++)
 	    {
 	    	fprintf(f, "%d ", connected_components[i].size());

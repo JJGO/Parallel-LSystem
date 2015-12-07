@@ -187,45 +187,91 @@ When looking at a decently sized group of L-Systems ($N \approx 100$) and a cons
 
 The interpretation step of multiple L-Systems is an inherently embarrassingly parallel problem since all of the systems are independent when it comes to interpretation. To further optimize the parallelization of the interpretation step, one can look at parallelizing the interpretation of an individual L-System. This can be easily done for \emph{non-branching} systems by replacing each symbol with its associated affine transformation (4x4 matrix). Since matrix multiplication is an associative operation we can easily solve the problem by using a \emph{reduce} function. \emph{Branching} systems can follow a similar approach but the complexity escapes the scope of the current paper. A more  detailed explanation can be found in \cite{LIPP-2010-PGMS}.
 
-\subsection{Naive parallelization} % (fold)
-\label{sub:naive_parallelization}
+\subsection{Dynamic scheduling} % (fold)
+\label{sub:dynamic_scheduling}
 
-A initial naive parallelization can be used by just simply parallelizing each one of the derivation iteration steps. Using a dynamic scheduling algorithm, the different processor will evenly split the work and solve each iteration in parallel. As we shall see later in Section \ref{sec:results}, this approach decreases the overall time but is far from perfect. The main disadvantage associated with this approach comes from the fact that a barrier must be set up at the end of each iteration to ensure correctness. This will imply that for $p$ processors and $N$ similarly sized trees, at the end of each iteration approximately $r \equiv N \mod p$ processors will be still working and $p - r$ will be idle, waiting for the rest to finish and wasting processing power. On average, this means that half of the processors will be idle for approximately $\frac{1}{\ceil{N/p}}$ part of the time.
+% subsection dynamic_scheduling (end)
 
-Furthermore, using a \emph{barrier} in the algorithm incurs in a great overhead since all threads will be synchronized after each iteration. Therefore, if we want to optimize the algorithm we will need to reduce this communication to a minimum.
+A initial naive parallelization can be used by just simply parallelizing each one of the derivation iteration steps. Using a dynamic scheduling algorithm, the processors will evenly split the work and solve each iteration in parallel. We consider dynamic scheduling instead of static scheduling to get a better load balancing scheme. Even though we know the amount of subproblems from the start, we cannot evenly divide them into the processors since the complexity of each system will be variable due to the  stochastic formulation that the trees are following.
 
-% subsection naive_parallelization (end)
+ As we shall see later in Section \ref{sec:results}, this approach decreases the overall time but is far from perfect. The main disadvantage associated with this approach comes from the fact that a barrier must be set up at the end of each iteration to ensure correctness. This will imply that for $p$ processors and $N$ similarly sized trees, at the end of each iteration approximately $r \equiv N \mod p$ processors will be still working and $p - r$ will be idle, waiting for the rest to finish and wasting processing power. On average, this means that half of the processors will be idle for approximately $\frac{1}{\ceil{N/p}}$ part of the time. As $p$ grows larger this fraction also becomes larger which is undesirable.
 
-\subsection{Neighbor checking} % (fold)
+Furthermore, the presence of the two implicit \emph{barriers} per iteration in the algorithm incurs in a great overhead since all threads will be synchronized after each iteration. Therefore, if we want to optimize the algorithm we will need to reduce all of this communication to a minimum.
+
+% subsection dynamic_scheduling (end)
+
+\subsection{Lookahead strategy} % (fold)
 \label{sub:neighbor_checking}
 
-\todo[inline]{Implement this and describe the results}
+Given the constraints of the problem we can enhance the parallelization by taking into account two facts:
+\begin{compactenum}[a)]
+\item \textbf{Local dependence} - As we explained before, the simulation has only a local dependence from a tree to its neighbors. Therefore, we need not wait for every tree to finish iteration $i$ to start iteration $i+1$. A given tree $t$ at iteration $i$ only needs the metrics of its neighbors at iteration $i$ to start the derivation phase. By applying this mechanism we can make use of every the processor available all the time; however, we will need to introduce series of constraints into the implementation.
+
+An additional verification step must be performed to test if all the neighbors have in fact reached at least the current iteration and proceed only if the minimum of their iterations is bigger or equal the iteration of the system at hand.
+
+The shared array that previously stored the metrics at each iteration will need another dimension for all the iterations, otherwise, we could potentially be reading a metric from a future iteration of a given neighbor, and correctness would be violated. Therefore, we will need to store for each tree $n$ the metric at every iteration $i$.
+
+Since no two processors will try to update the same metric or iteration variable during the entire program and reading not yet updated iteration variables does not affect the correctness; we will not need mutual exclusion to modify the metric variables. Accordingly, the communication is clearly lessened to only the neighbor checking and the work scheduling.
+
+\item \textbf{Geometry of the subproblems} - Since the simulation is running in parallel over all the $N$ trees for $k$ iterations we know in advance that $N \cdot k $ derivation steps will need to be done. We can dynamically schedule all this subproblems via an ordered work queue, so that the processors can take one subproblem at a time and if the derivation is possible (the neighbors have reached all the previous iteration) it will proceed, otherwise will return the work to the queue and try the next available subproblem.
+
+Since we are using an approach that relies on the connectivity of the trees in the forest, we can express the neighboring relationships in the forest as a undirected graph. An arbitrary queue will render a great amount of the neighbor checking steps unsuccessful, since we cannot predict which vertices have been derived yet and which not.
+
+However, we can make use of the inherent geometry of the problem by employing a graph traversing algorithm such as \emph{Breadth First Search}. By performing an initial \emph{BFS} traversal into the graph and storing this precalculated order we can ensure that if at every iteration, the nodes are interpreted in the same order, then we will be maximizing vertices whose neighbors all have the same iteration value.
+
+Consequently, the algorithm will start deriving at a given starting point of the graph and traversing it following BFS. When the other end is reached, a number of processors may not have work to do in said end, so they can go back to the starting point of the graph and  with a really high probability, they will be able to derive the next iteration of the vertices there, maximizing the processing power.
+
+\end{compactenum}
+
+With all this optimizations the program works almost as good as before (for some inputs the neighbor checking slows the algorithm) when $p \mid N$ and much better in cases where $N \mod p$ is really small which implies that for the previous implementation, a big fraction of the processors will be idle for an entire derivation step at the end of each iteration. Since the complexity of the derivation steps grows exponentially, this enhances the simulation runtime significantly.
+
 
 % subsection neighbor_checking (end)
 
-\subsection{Connected components} % (fold)
+\subsection{Connected components optimization} % (fold)
 \label{sub:connected_components}
 
-A further optimization can be made. The main disadvantage of the solution proposed in section \ref{sub:connected_components} comes from the fact that it introduces \todo[inline]{What is the problem, connected components or neighbor locks?}
+A further optimization can be made. The main disadvantage of the solution proposed in section \ref{sub:neighbor_checking} comes from the fact that it introduces a whole neighbor checking phase that can consume a non-negligible amount of resources if the graph presents great connectivity. Also, the simulation uses as inputs both dense and sparse groups of trees in order to satisfactorily model different types of environments. This implies that in some cases we will have a single highly connected graph and in other cases we may have several smaller subgraphs or even individual vertices.
+
+Moreover, as we briefly commented in the previous section the neighbor checking may be unnecessary in some cases. Specifically, when all processors are executing trees in the same iteration, neighbor checking needs not be done. By using a series of flag variables we can check if all the processors are in the same iteration and skip the neighbor checking.
+
+In addition, to improve  the algorithm we can also use the fact that we are performing a initial BFS to compute a order of visit to the vertices and also identify the different connected components of the graph. This is useful, since connected components in the graph render completely independent subgroups of L-Systems that will not share any information whatsoever during all the iterations. Using this information we can split the main queue into smaller queues which helps reducing the overhead of scheduling the work.
 
 % subsection connected_components (end)
+
+\subsection{Splitting L-Systems} % (fold)
+\label{sub:splitting_l_systems}
+
+To try to extend the parallelization further an attempt was made to parallelize the derivation of individual L-Systems. This rendered a problem when either $N$ was really small or $k$ was exceedingly big. To successfully divide a L-System into smaller work items, we can use the fact that L-Systems are parallel rewriting grammars. Since all the L-Systems covered in this implementation are context free, we can just evenly divide the number of symbols in the system in $m$ different pieces and add them into the dynamic queue. It is important that they are not dispersed in the queue since as we analyzed before, the neighbor checking pattern works better when given a BFS order for the nodes. The L-Systems were slightly modified to cope with the multiple updates that now a derivation step mean. The iteration value will not change until the last derivation part is finished.
+
+Following this scheme and building on top of the previous optimizations, we successfully reached a correct solution that split the work for L-Systems when idle processors are present and directly depend on that system to continue the work with another the derivation of another systems. However, the overhead involved in both checking if one L-System is bottlenecking the derivation and maintaining a queue with both entire L-System states and partial ones rendered the solution useless since it increases the serial time by at least one order of magnitude for almost all inputs. Consequently, this implementation was not used for the final results.
+
+% subsection splitting_l_systems (end)
 
 % section parallelization (end)
 
 \section{Results} % (fold)
 \label{sec:results}
 
-In this specific
+To thoroughly test the parallelization, the parallelization techniques described in section \ref{sec:parallelization}, were implemented incrementally and tested to test them independently. As data inputs a random combination of monopodial, system and ternary trees were used in each of the systems, all sharing the same defining parameters, since forests are usually made of trees with similar characteristics. Randomness was also use to place the points in a plane. A square surface was used, whose size was randomnly chosen at the beginning. The value for the size oscillated within the range $\sqrt{\sqrt{N}} \leq s \leq \sqrt{2N}$, since bigger sizes led to very sparse systems and smaller systems produced highly concentrated systems,  and neither of them resembled a realistic forest model. Therefore, by randomizing the area we are getting a random density for each testcase.
 
+As we also explained in previous section randomness is a crucial part in the derivation of stochastic L-Systems. At the interpretation of every nontrivial symbol, randomness is used to decide between using the default production rule or the plain identity. This coupled with the interdependence strategy models the forest behavior as desired.
+\todo[inline]{this}
 % section results (end)
 
 \section{Discussion} % (fold)
 \label{sec:discussion}
-
+\todo[inline]{this}
 % section discussion (end)
 
 \section{Conclusion} % (fold)
 \label{sec:conclusion}
+
+This report explores the viability of using parametric stochastic interdependent Lindenmayer systems to model the growth behavior of a forest, and a nontrivial way of parallelizing the problem. The final parallelization scheme involved a number of components which include a dynamically scheduled queue, an initial traversal search to determine the order of the nodes, a neighbor checking algorithm that deserialized the iteration steps allowing multiple iterations happen at once and finally a decomposition of the graph into smaller subgraphs to further optimize the results.
+
+An important conclusion that we can gather from the analysis given is the fact that the nature of the L-Systems structure was not directly used in the parallelization (except for Section \ref{sub:splitting_l_systems}, which was unsuccessful). This means that the obtained parallelization algorithm can adequately model similar problems of the same characteristics. Namely, given a simulation problem with local dependence, and problems that grow with the same complexity after each iteration; the present algorithm should render similar results with similar inputs, even if the internal elements are not precisely L-Systems.
+
+\textbf{Future work:} The main caveat of the produced outputs was that all trees had the same ``age'', which translates in similar complexities (within one order of magnitude). This scenario is not unrealistic, (forest after fires develop in this fashion), but is far from general. We would like to analyze how the system would grow if new trees had the possibility to develop at any given iteration given certain circumstances like the presence of neighboring trees. This greatly breaks the current parallelization so it would be an interesting problem to analyze.
 
 % section conclusion (end)
 
