@@ -71,35 +71,41 @@ for mode in modes:
     #     times[k] = sorted(times[k])[:20]
 
     avs = { p : sum(times[p])/len(times[p]) for p in ps}
-    # mins = { p : min(times[p]) for p in ps }
-    mins = { p : max(times[p]) for p in ps }
+    mins = { p : min(times[p]) for p in ps }
 
     for p in ps:
         avs[p] /= factor[mode,p]
 
+    # for p in ps:
+    #     time = times[p]
+    #     av = avs[p]
+    #     print "{1} & {2:.5f} & {3:.5f} & {4:.5f}\\\\".format(n,p,av,min(time),max(time))
+
+    s =  "%d & " % n
     for p in ps:
-        time = times[p]
-        av = avs[p]
-        print "{1} & {2:.5f} & {3:.5f} & {4:.5f}\\\\".format(n,p,av,min(time),max(time))
+        s += "%.3f & " % avs[p]
+    s = s[:-2] + "\\\\"
+    print s
+
         # " ".join(map(str,time))
 
-    for k in sorted(times):
-        print k,len(times[k])
+    # for k in sorted(times):
+    #     print k,len(times[k])
 
     ideals = map(lambda x: avs[ps[0]]/x,ps)
 
-    fig = pyplot.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(ps,ideals, 'g.-', label = 'Ideal Case')
-    ax.plot(ps,[avs[p] for p in ps], 'r.-', label = 'Average Case')
-    ax.plot(ps,[mins[p] for p in ps], 'b.-', label = 'Best Case')
-    pyplot.xlabel('Processors')
-    pyplot.ylabel('Time (s)')
+    # fig = pyplot.figure()
+    # ax = fig.add_subplot(111)
+    # ax.plot(ps,ideals, 'g.-', label = 'Ideal Case')
+    # ax.plot(ps,[avs[p] for p in ps], 'r.-', label = 'Average Case')
+    # # ax.plot(ps,[mins[p] for p in ps], 'b.-', label = 'Best Case')
+    # pyplot.xlabel('Processors')
+    # pyplot.ylabel('Time (s)')
     pyplot.title('Running Times for N = %s It = %s' % ( str(n), str(iterations) ) )
-    pyplot.yscale('log')
-    pyplot.legend(loc=1)
-    pyplot.savefig(str(n)+'_'+mode+'.png')
-    # pyplot.show()
+    # pyplot.yscale('log')
+    # pyplot.legend(loc=1)
+    # pyplot.savefig(str(n)+'_'+mode+'.png')
+    # # pyplot.show()
     stored_avs[mode] = avs
 
     # print n_components
@@ -116,10 +122,10 @@ for mode in modes:
 # }
 
 properties = {
-    "naive65" : ('m.-','Naive N = 65'),
-    "naive110" : ('r.-','Naive N = 110'),
-    "naive220" : ('b.-','Naive N = 220'),
-    "dynamicahead65" : ('m.--','Lookahead N = 65'),
+    "naive65" : ('c.-','Dynamic N = 65'),
+    "naive110" : ('r.-','Dynamic N = 110'),
+    "naive220" : ('b.-','Dynamic N = 220'),
+    "dynamicahead65" : ('c.--','Lookahead N = 65'),
     "dynamicahead110" : ('r.--','Lookahead N = 110'),
     "dynamicahead220" : ('b.--','Lookahead N = 220'),
 }
@@ -136,7 +142,7 @@ for mode in modes:
 
 pyplot.xlabel('Processors')
 pyplot.ylabel('SpeedUp')
-pyplot.title('Comparison of SpeedUp')
+# pyplot.title('Comparison of SpeedUp')
 # pyplot.legend(['Ideal SpeedUp','n = '+str(n)],loc=2)
 handles, labels = ax.get_legend_handles_labels()
 lgd = ax.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5,-0.1))
@@ -158,9 +164,24 @@ pyplot.ylabel('Efficiency')
 axes = pyplot.gca()
 # axes.set_xlim([1,35])
 axes.set_ylim([0,1.5])
-pyplot.title('Comparison of Efficiencies')
+# pyplot.title('Comparison of Efficiencies')
 handles, labels = ax.get_legend_handles_labels()
 lgd = ax.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5,-0.1))
 # ax.grid('on')
 fig.savefig('Efficiency.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
 # pyplot.show()
+
+for n in ns:
+    fig = pyplot.figure()
+    ax = fig.add_subplot(111)
+    ideals = map(lambda x: stored_avs['dynamicahead%d' % n][ps[0]]/x,ps)
+    ax.plot(ps,ideals, 'g.-', label = 'Ideal Time')
+    ax.plot(ps,[stored_avs['naive%d' % n][p] for p in ps], 'r.-', label = 'Average Time Dynamic')
+    ax.plot(ps,[stored_avs['dynamicahead%d' % n][p] for p in ps], 'b.-', label = 'Average Time Lookahead')
+    pyplot.xlabel('Processors')
+    pyplot.ylabel('Time (s)')
+    iterations = 12
+    # pyplot.title('Running Times for N = %s It = %s' % ( str(n), str(iterations) ) )
+    pyplot.yscale('log')
+    pyplot.legend(loc=1)
+    # pyplot.savefig('time_%d.png' % n)

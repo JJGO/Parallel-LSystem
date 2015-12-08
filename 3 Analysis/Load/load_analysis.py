@@ -77,7 +77,7 @@ for mode in modes:
         max_symbols_per_thread[proc] = sum(u)/len(u)
         v = [min(p) for p in symbols[proc]]
         min_symbols_per_thread[proc] = sum(v)/len(v)
-        print "{0} &  {1:09.1f} & {2:09.1f} & {3:7d}\\\\".format(proc, symbols_per_thread[proc], ideal_symbols_per_thread[proc], total_symbols[proc])
+        print "{0} &  {2:9.1f} & {1:9.1f} & {4:9.1f} & {5:9.1f}\\\\".format(proc, symbols_per_thread[proc], ideal_symbols_per_thread[proc], total_symbols[proc],min_symbols_per_thread[proc],max_symbols_per_thread[proc])
 
     systems_per_thread = {}
     total_systems = {}
@@ -96,7 +96,7 @@ for mode in modes:
         max_systems_per_thread[proc] = sum(u)/len(u)
         v = [min(p) for p in systems[proc]]
         min_systems_per_thread[proc] = sum(v)/len(v)
-        print "{0} &  {1:02.1f} & {2:02.1f} & {3:7d}\\\\".format(proc, systems_per_thread[proc], ideal_systems_per_thread[proc], total_systems[proc])
+        print "{0} &  {2:9.1f} & {1:9.1f} & {4:9.1f} & {5:9.1f}\\\\".format(proc, systems_per_thread[proc], ideal_systems_per_thread[proc], total_systems[proc],min_systems_per_thread[proc],max_systems_per_thread[proc])
 
 
     for k in sorted(times):
@@ -107,12 +107,12 @@ for mode in modes:
 
     fig = pyplot.figure()
     ax = fig.add_subplot(111)
-    ax.plot(ps,[total_symbols[p] for p in ps], 'b.-',label='Total symbols explored')
-    ax.plot(ps,[ideal_symbols_per_thread[p] for p in ps], 'g.-',label = 'Ideal Node Balancing')
-    ax.plot(ps,[symbols_per_thread[p] for p in ps], 'r.-',label=' Average symbols explored per thread')
-    ax.plot(ps,[max_symbols_per_thread[p] for p in ps], 'm.-',label='Maximum symbols explored per thread')
-    ax.plot(ps,[min_symbols_per_thread[p] for p in ps], 'c.-',label='Minimum symbols explored per thread')
-    pyplot.title('Load balancing of symbols')
+    ax.plot(ps,[total_symbols[p] for p in ps], 'b.-',label='Total symbols translated')
+    ax.plot(ps,[symbols_per_thread[p] for p in ps], 'r.-',label=' Average symbols translated per thread')
+    ax.plot(ps,[ideal_symbols_per_thread[p] for p in ps], 'g.--',label = 'Ideal Load Balancing')
+    ax.plot(ps,[max_symbols_per_thread[p] for p in ps], 'm.-',label='Maximum symbols translated per thread')
+    ax.plot(ps,[min_symbols_per_thread[p] for p in ps], 'c.-',label='Minimum symbols translated per thread')
+    # pyplot.title('Load balancing of symbols')
     pyplot.xlabel('Processors')
     pyplot.ylabel('Symbols translated')
     pyplot.yscale('log')
@@ -125,8 +125,8 @@ for mode in modes:
     fig = pyplot.figure()
     ax = fig.add_subplot(111)
     ax.plot(ps,[total_systems[p] for p in ps], 'b.-',label='Total systems processed')
-    ax.plot(ps,[ideal_systems_per_thread[p] for p in ps], 'g.-',label = 'Ideal systems processed per thread')
     ax.plot(ps,[systems_per_thread[p] for p in ps], 'r.-',label=' Average systems processed per thread')
+    ax.plot(ps,[ideal_systems_per_thread[p] for p in ps], 'g.--',label = 'Ideal systems processed per thread')
     ax.plot(ps,[max_systems_per_thread[p] for p in ps], 'm.-',label='Maximum systems processed per thread')
     ax.plot(ps,[min_systems_per_thread[p] for p in ps], 'c.-',label='Minimum systems processed per thread')
     # ax.set_xlim([ps[0]-1,ps[-1]+1])
@@ -134,9 +134,10 @@ for mode in modes:
     pyplot.yscale('log')
     pyplot.xlabel('Processors')
     pyplot.ylabel('Number of systems derived')
-    pyplot.title('Load balancing of systems')
+    # pyplot.title('Load balancing of systems')
     handles, labels = ax.get_legend_handles_labels()
     lgd = ax.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5,-0.1))
     # ax.grid('on')
     fig.savefig('systems'+mode+'.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     # pyplot.show()
+

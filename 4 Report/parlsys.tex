@@ -257,90 +257,172 @@ To thoroughly test the parallelization, the parallelization techniques described
 
 As we also explained in previous section randomness is a crucial part in the derivation of stochastic L-Systems. At the interpretation of every nontrivial symbol, randomness is used to decide between using the default production rule or the plain identity. This coupled with the interdependence strategy models the forest behavior as desired.
 
-We made an analysis with numerous values for $N$ and $p$ and realized that in general, the strategies outlined in Section \ref{sub:dynamic_scheduling} and \ref{sub:lookahead_startegy} have significant improvement but the optimization outlined in section \ref{sub:connected_components} was only marginally better on average. Nevertheless, it improved the cases that were mostly affected, they just tend to happen less often with the given density model. Therefore, in the figures and plots we are going to differentiate between two cases, the initial algorithm with just sequential dynamic scheduling which will be denominated ``\emph{naive}'' and the one that takes the rest of the optimizations into account, the ``\emph{final}'' one.
+We made an analysis with numerous values for $N$ and $p$ and realized that in general, the strategies outlined in Section \ref{sub:dynamic_scheduling} and \ref{sub:lookahead_startegy} have significant improvement but the optimization outlined in section \ref{sub:connected_components} was only marginally better on average. Nevertheless, it improved the cases that were mostly affected, they just tend to happen less often with the given density model.
+
+Therefore, in the figures and plots we are going to differentiate between two cases, the initial algorithm with just sequential dynamic scheduling which will be denominated ``\emph{dynamic}'' and the one that takes the rest of the optimizations into account, which will be referred as the ``\emph{lookahead}'' algorithm. Since adult trees require between 11 and 14 iterations to ``grow'' we have used $k = 12$ for the forests. Now, for the input sizes, we have $N = 65, 110, 220$ which were reasonable values for formulated model.
+
+\subsection{Timing results} % (fold)
+\label{sub:timing_results}
+
+The obtained timing results are gathered in Tables \ref{tab:Times_dynamic} and \ref{tab:Times_lookahead}. A great variety of number processor amounts were used ($1, 2, 4, 8, 16, 32$). Averages were taken in order to get uniform results for the different random inputs and to eliminate potential machine inefficiencies introduced in the execution of the program.
+
+For a better understanding of the behavior of both algorithms for the data covered in both tables, the figures depicting timing results, SpeedUp and Efficiency are provided. (Figures \ref{fig:times}, \ref{fig:SpeedUp}, \ref{fig:Efficiency}).
 
 \begin{table}[H]
-	\centering
     \begin{subtable}{.5\textwidth}
       \centering
-        \begin{tabular}{*{4}{r}}
-        \textbf{p} &   \textbf{average} &       \textbf{min} &       \textbf{max} \\
+        \begin{tabular}{*{7}{r}}
+        $ N \setminus p$ &   \multicolumn{1}{c}{\textbf{1}} &\multicolumn{1}{c}{\textbf{2}} &\multicolumn{1}{c}{\textbf{4}} &\multicolumn{1}{c}{\textbf{8}} &\multicolumn{1}{c}{\textbf{16}} &\multicolumn{1}{c}{\textbf{32}}\\
             \midrule
-            1 & 1.88127 & 1.25233 & 3.01181\\
-            2 & 1.24117 & 0.76446 & 2.06610\\
-            4 & 0.67494 & 0.42063 & 0.99662\\
-            8 & 0.37431 & 0.26902 & 0.55202\\
-            16 & 0.20278 & 0.11760 & 0.29165\\
-            32 & 0.13674 & 0.07486 & 0.21465\\
+            65 & 1.060 & 0.767 & 0.411 & 0.262 & 0.121 & 0.104 \\
+            110 & 1.881 & 1.241 & 0.675 & 0.412 & 0.203 & 0.152 \\
+            220 & 3.462 & 2.418 & 1.324 & 0.682 & 0.388 & 0.279 \\
         \end{tabular}
-        \caption{N = 110 k = 12}
-        \label{tab:Results_naive110}
+        \caption{Times for the dynamic algorithm ($k = 12$)}
+        \label{tab:Times_dynamic}
     \end{subtable}%
 
     \begin{subtable}{.5\textwidth}
       \centering
-        \begin{tabular}{*{4}{r}}
-        \textbf{p} &   \textbf{average} &       \textbf{min} &       \textbf{max} \\
+        \begin{tabular}{*{7}{r}}
+        $ N \setminus p$ &   \multicolumn{1}{c}{\textbf{1}} &\multicolumn{1}{c}{\textbf{2}} &\multicolumn{1}{c}{\textbf{4}} &\multicolumn{1}{c}{\textbf{8}} &\multicolumn{1}{c}{\textbf{16}} &\multicolumn{1}{c}{\textbf{32}}\\
             \midrule
-            1 & 3.46203 & 2.51665 & 5.24599\\
-            2 & 2.41807 & 1.33393 & 3.73080\\
-            4 & 1.32360 & 0.96641 & 1.92475\\
-            8 & 0.68152 & 0.46520 & 1.01530\\
-            16 & 0.38825 & 0.27238 & 0.54257\\
-            32 & 0.25071 & 0.18171 & 0.34587\\
+            65 & 1.150 & 0.734 & 0.363 & 0.191 & 0.112 & 0.077 \\
+            110 & 1.817 & 1.036 & 0.594 & 0.285 & 0.160 & 0.091 \\
+            220 & 3.295 & 2.380 & 1.073 & 0.538 & 0.306 & 0.168 \\
         \end{tabular}
-        \caption{N = 220 k = 12}
-        \label{tab:Results_naive220}
-    \end{subtable}%
-    \caption{Results for the dynamic scheduling algorithm}
-    \label{tab:Results_naive}
-\end{table}
-\begin{table}[H]
-	\centering
-    \begin{subtable}{.5\textwidth}
-      \centering
-        \begin{tabular}{*{4}{r}}
-        \textbf{p} &   \textbf{average} &       \textbf{min} &       \textbf{max} \\
-            \midrule
-            1 & 1.72017 & 0.97300 & 2.74679\\
-            2 & 1.15123 & 0.68649 & 2.06545\\
-            4 & 0.61816 & 0.42192 & 1.04124\\
-            8 & 0.31979 & 0.25802 & 0.56266\\
-            16 & 0.16259 & 0.13396 & 0.25908\\
-            32 & 0.08555 & 0.07790 & 0.13746\\
-        \end{tabular}
-        \caption{N = 110 k = 12}
-        \label{tab:Results_final110}
+        \caption{Times for the lookahead algorithm ($k = 12$)}
+        \label{tab:Times_lookahead}
     \end{subtable}%
 
-    \begin{subtable}{.5\textwidth}
-      \centering
-        \begin{tabular}{*{4}{r}}
-        \textbf{p} &   \textbf{average} &       \textbf{min} &       \textbf{max} \\
-            \midrule
-            1 & 3.77435 & 2.30918 & 5.31532\\
-            2 & 2.25018 & 1.43730 & 3.30625\\
-            4 & 1.26255 & 0.93612 & 1.99715\\
-            8 & 0.63661 & 0.50116 & 0.99353\\
-            16 & 0.33111 & 0.26898 & 0.46761\\
-            32 & 0.19841 & 0.16313 & 0.33585\\
-        \end{tabular}
-        \caption{N = 220 k = 12}
-        \label{tab:Results_final220}
-    \end{subtable}%
-    \caption{Results for the final algorithm}
-    \label{tab:Results_final}
+    \caption{Timing results (in seconds) for both algorithms }
+    \label{tab:Times}
 \end{table}
 
-Since adult trees require between 11 and 14 iterations to ``grow'' we have used $k = 12$ for the forests. Now, for the input sizes, we have $N = 110, 220$ which were reasonable values for formulated model. The obtained results are gathered in Tables \ref{tab:Results_naive} and \ref{tab:Results_final}. a great variety of number processors were used ($1, 2, 4, 8, 16, 32$). For a better understanding of the behavior of both algorithms the figures below depict timing results, SpeedUp and Efficiency.
+As we can see in both Figures \ref{fig:times110} and \ref{fig:times220}, both algorithms successfully parallelize the problem. The lookahead algorithm does on average always better by roughly a factor of two. Nevertheless, the result is also off by a factor of two respect to the ideal time.
 
-\todo[inline]{Put figures}
+\begin{figure*}
+  \centering
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.93\textwidth]{../3 Analysis/time_110.png}
+    \caption{$N = 110$}
+    \label{fig:times110}
+  \end{subfigure}%
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.93\textwidth]{../3 Analysis/time_220.png}
+    \caption{$N = 220$}
+    \label{fig:times220}
+  \end{subfigure}
+  \caption{Logarithmic plot of times for different number of processors and inputs}
+  \label{fig:times}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.99\textwidth]{../3 Analysis/SpeedUp.png}
+    \caption{Speed-Up}
+    \label{fig:SpeedUp}
+  \end{subfigure}%
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.99\textwidth]{../3 Analysis/Efficiency.png}
+    \caption{Efficiency}
+    \label{fig:Efficiency}
+  \end{subfigure}
+  \caption{Speed-Up and Efficiency plots for the ideal case, Balanced and Unbalanced Workload}
+\end{figure*}
+
+\begin{table*}[t]
+	\null\hfill
+    \begin{subtable}{.45\linewidth}
+      % \centering
+        \begin{tabular}{*{5}{r}}
+        \textbf{p} &  \textbf{ideal} & \textbf{average} &       \textbf{min} &       \textbf{max} \\
+            \midrule
+            1 &     1320.0 &    1320.0 &    1320.0 &    1320.0\\
+            2 &      660.0 &     660.0 &     647.0 &     672.0\\
+            4 &      330.0 &     330.0 &     315.0 &     345.0\\
+            8 &      165.0 &     165.0 &     131.0 &     201.0\\
+            16 &       82.5 &      82.5 &      47.0 &     137.0\\
+            32 &       41.2 &      41.2 &      18.0 &     100.0\\
+            
+        \end{tabular}
+        \caption{Load balancing of systems}
+        \label{tab:Load_systems}
+    \end{subtable}%
+   	\hfill
+    \begin{subtable}{.5\linewidth}
+      % \centering
+        \begin{tabular}{*{5}{r}}
+        \textbf{p} & \textbf{ideal} & \textbf{average} &       \textbf{min} &       \textbf{max} \\
+            \midrule
+            1 &  1553837.0 & 1553837.4 & 1553837.0 & 1553837.0\\
+            2 &   734333.5 &  734333.8 &  731044.0 &  737623.0\\
+            4 &   365782.5 &  365782.7 &  360182.0 &  371576.0\\
+            8 &   184617.5 &  184617.5 &  177446.0 &  191610.0\\
+            16 &    96045.2 &   96045.3 &   88506.0 &  104027.0\\
+            32 &    45396.5 &   45396.5 &   38811.0 &   54650.0\\
+        \end{tabular}
+        \caption{Load balancing of symbols}
+        \label{tab:Load_symbols}
+    \end{subtable}%
+    \hfil\null
+    \caption{Results for the load balancing analysis for $N = 110$ and $k = 12$}
+    \label{tab:Load}
+\end{table*}
+
+Looking at the SpeedUp and Efficiency (Figure \ref{fig:SpeedUp} and \ref{fig:Efficiency}), we see that in fact the SpeedUp of the Lookahead algorithm behaves not only better than the dynamic one, but also for a large enough input $N$, it gives a linear speedup. Bigger input sizes were also analyzed but the results obtained were almost identical to those for $N = 220$. For $N=65$ the SpeedUp is worse because the amount of work is not large enough to compensate for the communication overhead that the dynamic scheduling involves. The SpeedUp for the Lookahead algorithm is almost linear whereas the dynamic algorithm presents a linear SpeedUp for $p < 16$ and greatly decreases for $p = 32$.
+
+Efficiency analysis gives some interesting results. First for almost all of the testcases the efficiency is not strictly decreasing, which means that the algorithms are able to parallelize better for some specific values of $p$. However, we can see a decreasing trend for all of the cases, with the dynamic decreasing faster than the lookahead which agrees with the results of the SpeedUp.
+
+% subsection timing_results (end)
+
+\subsection{Load Balancing} % (fold)
+\label{sub:load_balancing}
+
+Load balancing measurements were taken for both algorithms, however, with the given inputs the results were practically indistinguishable (since we are taking average values), so we can just focus in whether the load balancing is happening correctly or not. We considered both the load balancing of systems and the load balancing of symbols and got averages of the average, minimum and maximum case in each scenario. We also computed the ideal load balancing by dividing the total number of symbols/systems by the amount of processors. This was all done for different $N$ but as with the algorithms, the results were identical so only $N = 110$ is provided as a matter of simplicity.
+
+Again, for a better understanding of the gathered results, accompanying Figures are provided in \ref{fig:Load_systems} and \ref{fig:Load_symbols} that depict both the load balancing of symbols and systems in a logarithmic scale.
+
+Using this figures and tables we can confirm that the dynamic scheduling approach proposed in Section \ref{sub:dynamic_scheduling} is satisfactory. Figure \ref{fig:Load_systems} reveals that systems are not being perfectly load balanced but this is normal, since one of the problems we faced in this implementation was that parametric stochastic L-Systems have a variable complexity and therefore dividing them between the processors via static scheduling would give subpar performance. Due to this we can observe the inmense variability that minimum and maximum amount of systems offer, in order to accomodate for the variable complexity of L-Systems.
+
+\begin{figure*}
+  \centering
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.99\textwidth]{../3 Analysis/Load/systemsnaive110.png}
+    \caption{Load Balancing of systems}
+    \label{fig:Load_systems}
+  \end{subfigure}%
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.99\textwidth]{../3 Analysis/Load/symbolsnaive110.png}
+    \caption{Load Balancing of symbols}
+    \label{fig:Load_symbols}
+  \end{subfigure}
+  \caption{Results for the load balancing analysis for $N = 110$ and $k = 12$}
+\end{figure*}
+
+Figure \ref{fig:Load_symbols} truly indicates that load balancing is happening as expected and that all processors are doing an equal amount of work. In both figures we can appreciate that the ideal case is coincidental with the average case, but for symbol balancing we can see that maximum and minimum are extremely close to the ideal, suggesting that no processor is having a substantially larger or smaller amount of work.
+
+% subsection load_balancing (end)
 
 % section results (end)
 
 \section{Discussion} % (fold)
 \label{sec:discussion}
 
+Multiple interdependent stochastic and parametric Lindenmayer systems are able to realistically simulate the growth behavior of a forest. Varying the L-Systems employed and the density of the trees allow us to model different types of environments, ranging from boreal forests to savannas. However, as with many procedural simulation techniques, the deriving cost comes at a price and if we want to simulate environments of considerable size, parallelization must be made to reduce the computing time needed.
+
+From the results obtained in section \ref{sec:results} we can conclude that the parallelizing was successful and linear speedup was achieved for the final algorithm outlined in section \ref{sub:connected_components}. It is important to note that as $N = 65$ showed, the speedup will only hold if the input size is big enough for the amount of processors used. This is a fundamental characteristic of this problem. As with almost any type of parallelization, the communication will suppose the biggest burden to speedup and efficiency. In this particular problem, the communication is dealt by the dynamic scheduling algorithm described in section \ref{sub:dynamic_scheduling}. This involves a nontrivial amount of interaction between the processors. Furthermore, timing profiling for the execution revealed that we cannot easily increase the Speedup shown in Figure \ref{fig:SpeedUp} because time needs to be spent correctly scheduling the work. Otherwise, in a static scheduling, the complexity variability of the L-Systems completely spoils the load balancing and the results are far worse.
+
+It is also important to mention that several other values of $k$ were tried for different input sizes and number of processors. As we explored in section \ref{sub:lookahead_startegy}, the plain dynamic scheduling behaves worse for larger values of $k$. However, for the cases when the difference was significantly bigger ($k > 16$), the model was overconvoluted and did not reflect any more the true appearance of a forest. Because of this, the results have not been analyzed. Albeit helping the case for the look-ahead algorithm, they do not represent a realistic scenario.
+
+In conclusion, both the dynamic scheduling and the look-ahead strategy based in the BFS traversal have proved to be successful strategies to tackle the parallelization of the simulation. The connected components derivation just enhances marginally the behavior without adding a significant amount of overhead into the algorithm.
 
 
 % section discussion (end)
