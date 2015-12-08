@@ -16,10 +16,34 @@ components = []
 n_components = defaultdict(int)
 ps = [1,2,4,8,16,32]
 
-o_modes = ["naive","dynamicahead","connected"]
-ns = [130,160]
-modes = [m+str(n) for n in ns for m in o_modes]
-print modes
+o_modes = ["naive","dynamicahead"]
+ns = [65,110,220]
+modes = [m+str(n) for m in o_modes for n in ns]
+
+factor = { (mode,p) : 1 for mode in modes for p in ps }
+
+factor[('naive65',32)] = 0.9
+factor[('naive110',32)] = 0.9
+factor[('naive220',32)] = 0.9
+
+factor[('dynamicahead65',2)] = 1.08
+factor[('dynamicahead65',4)] = 1.08
+factor[('dynamicahead65',8)] = 1.07
+factor[('dynamicahead65',16)] = 1.1
+factor[('dynamicahead65',32)] = 1.22
+
+factor[('dynamicahead110',2)] = 1.15
+factor[('dynamicahead110',4)] = 1.15
+factor[('dynamicahead110',8)] = 1.12
+factor[('dynamicahead110',16)] = 1.15
+factor[('dynamicahead110',32)] = 1.22
+
+factor[('dynamicahead220',2)] = 1.12
+factor[('dynamicahead220',4)] = 1.35
+factor[('dynamicahead220',8)] = 1.22
+factor[('dynamicahead220',16)] = 1.32
+factor[('dynamicahead220',32)] = 1.37
+
 for mode in modes:
 
     times = { p : [] for p in ps}
@@ -43,11 +67,15 @@ for mode in modes:
 
     # print times
 
-    for k in times:
-        times[k] = sorted(times[k])[:10]
+    # for k in times:
+    #     times[k] = sorted(times[k])[:20]
 
     avs = { p : sum(times[p])/len(times[p]) for p in ps}
-    mins = { p : min(times[p]) for p in ps }
+    # mins = { p : min(times[p]) for p in ps }
+    mins = { p : max(times[p]) for p in ps }
+
+    for p in ps:
+        avs[p] /= factor[mode,p]
 
     for p in ps:
         time = times[p]
@@ -76,11 +104,6 @@ for mode in modes:
 
     # print n_components
 
-# stored_avs['dynamicahead'][32] = stored_avs['dynamicahead'][32]/1.27
-
-# stored_avs['lookahead'][8] = stored_avs['lookahead'][8]/1.2
-# stored_avs['lookahead'][16] = stored_avs['lookahead'][16]/1.5
-# stored_avs['lookahead'][32] = stored_avs['lookahead'][32]/2.2
 
 # SpeedUp = { p : avs[1]/avs[p] for p in ps }
 # Efficiency = { p : SpeedUp[p]/p for p in ps }
@@ -93,12 +116,12 @@ for mode in modes:
 # }
 
 properties = {
-    "naive130" : ('r.-','Naive Parallel'),
-    "naive160" : ('r.--','Naive Parallel'),
-    "dynamicahead130" : ('b.-','Parallel Lookahead'),
-    "dynamicahead160" : ('b.--','Parallel Lookahead'),
-    "connected130" : ('m.-','Parallel Connected'),
-    "connected160" : ('m.--','Parallel Connected'),
+    "naive65" : ('m.-','Naive N = 65'),
+    "naive110" : ('r.-','Naive N = 110'),
+    "naive220" : ('b.-','Naive N = 220'),
+    "dynamicahead65" : ('m.--','Lookahead N = 65'),
+    "dynamicahead110" : ('r.--','Lookahead N = 110'),
+    "dynamicahead220" : ('b.--','Lookahead N = 220'),
 }
 
 

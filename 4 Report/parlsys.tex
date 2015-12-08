@@ -201,7 +201,7 @@ Furthermore, the presence of the two implicit \emph{barriers} per iteration in t
 % subsection dynamic_scheduling (end)
 
 \subsection{Lookahead strategy} % (fold)
-\label{sub:neighbor_checking}
+\label{sub:lookahead_startegy}
 
 Given the constraints of the problem we can enhance the parallelization by taking into account two facts:
 \begin{compactenum}[a)]
@@ -226,12 +226,12 @@ Consequently, the algorithm will start deriving at a given starting point of the
 With all this optimizations the program works almost as good as before (for some inputs the neighbor checking slows the algorithm) when $p \mid N$ and much better in cases where $N \mod p$ is really small which implies that for the previous implementation, a big fraction of the processors will be idle for an entire derivation step at the end of each iteration. Since the complexity of the derivation steps grows exponentially, this enhances the simulation runtime significantly.
 
 
-% subsection neighbor_checking (end)
+% subsection lookahead_startegy (end)
 
 \subsection{Connected components optimization} % (fold)
 \label{sub:connected_components}
 
-A further optimization can be made. The main disadvantage of the solution proposed in section \ref{sub:neighbor_checking} comes from the fact that it introduces a whole neighbor checking phase that can consume a non-negligible amount of resources if the graph presents great connectivity. Also, the simulation uses as inputs both dense and sparse groups of trees in order to satisfactorily model different types of environments. This implies that in some cases we will have a single highly connected graph and in other cases we may have several smaller subgraphs or even individual vertices.
+A further optimization can be made. The main disadvantage of the solution proposed in section \ref{sub:lookahead_startegy} comes from the fact that it introduces a whole neighbor checking phase that can consume a non-negligible amount of resources if the graph presents great connectivity. Also, the simulation uses as inputs both dense and sparse groups of trees in order to satisfactorily model different types of environments. This implies that in some cases we will have a single highly connected graph and in other cases we may have several smaller subgraphs or even individual vertices.
 
 Moreover, as we briefly commented in the previous section the neighbor checking may be unnecessary in some cases. Specifically, when all processors are executing trees in the same iteration, neighbor checking needs not be done. By using a series of flag variables we can check if all the processors are in the same iteration and skip the neighbor checking.
 
@@ -256,12 +256,93 @@ Following this scheme and building on top of the previous optimizations, we succ
 To thoroughly test the parallelization, the parallelization techniques described in section \ref{sec:parallelization}, were implemented incrementally and tested to test them independently. As data inputs a random combination of monopodial, system and ternary trees were used in each of the systems, all sharing the same defining parameters, since forests are usually made of trees with similar characteristics. Randomness was also use to place the points in a plane. A square surface was used, whose size was randomnly chosen at the beginning. The value for the size oscillated within the range $\sqrt{\sqrt{N}} \leq s \leq \sqrt{2N}$, since bigger sizes led to very sparse systems and smaller systems produced highly concentrated systems,  and neither of them resembled a realistic forest model. Therefore, by randomizing the area we are getting a random density for each testcase.
 
 As we also explained in previous section randomness is a crucial part in the derivation of stochastic L-Systems. At the interpretation of every nontrivial symbol, randomness is used to decide between using the default production rule or the plain identity. This coupled with the interdependence strategy models the forest behavior as desired.
-\todo[inline]{this}
+
+We made an analysis with numerous values for $N$ and $p$ and realized that in general, the strategies outlined in Section \ref{sub:dynamic_scheduling} and \ref{sub:lookahead_startegy} have significant improvement but the optimization outlined in section \ref{sub:connected_components} was only marginally better on average. Nevertheless, it improved the cases that were mostly affected, they just tend to happen less often with the given density model. Therefore, in the figures and plots we are going to differentiate between two cases, the initial algorithm with just sequential dynamic scheduling which will be denominated ``\emph{naive}'' and the one that takes the rest of the optimizations into account, the ``\emph{final}'' one.
+
+\begin{table}[H]
+	\centering
+    \begin{subtable}{.5\textwidth}
+      \centering
+        \begin{tabular}{*{4}{r}}
+        \textbf{p} &   \textbf{average} &       \textbf{min} &       \textbf{max} \\
+            \midrule
+            1 & 1.88127 & 1.25233 & 3.01181\\
+            2 & 1.24117 & 0.76446 & 2.06610\\
+            4 & 0.67494 & 0.42063 & 0.99662\\
+            8 & 0.37431 & 0.26902 & 0.55202\\
+            16 & 0.20278 & 0.11760 & 0.29165\\
+            32 & 0.13674 & 0.07486 & 0.21465\\
+        \end{tabular}
+        \caption{N = 110 k = 12}
+        \label{tab:Results_naive110}
+    \end{subtable}%
+
+    \begin{subtable}{.5\textwidth}
+      \centering
+        \begin{tabular}{*{4}{r}}
+        \textbf{p} &   \textbf{average} &       \textbf{min} &       \textbf{max} \\
+            \midrule
+            1 & 3.46203 & 2.51665 & 5.24599\\
+            2 & 2.41807 & 1.33393 & 3.73080\\
+            4 & 1.32360 & 0.96641 & 1.92475\\
+            8 & 0.68152 & 0.46520 & 1.01530\\
+            16 & 0.38825 & 0.27238 & 0.54257\\
+            32 & 0.25071 & 0.18171 & 0.34587\\
+        \end{tabular}
+        \caption{N = 220 k = 12}
+        \label{tab:Results_naive220}
+    \end{subtable}%
+    \caption{Results for the dynamic scheduling algorithm}
+    \label{tab:Results_naive}
+\end{table}
+\begin{table}[H]
+	\centering
+    \begin{subtable}{.5\textwidth}
+      \centering
+        \begin{tabular}{*{4}{r}}
+        \textbf{p} &   \textbf{average} &       \textbf{min} &       \textbf{max} \\
+            \midrule
+            1 & 1.72017 & 0.97300 & 2.74679\\
+            2 & 1.15123 & 0.68649 & 2.06545\\
+            4 & 0.61816 & 0.42192 & 1.04124\\
+            8 & 0.31979 & 0.25802 & 0.56266\\
+            16 & 0.16259 & 0.13396 & 0.25908\\
+            32 & 0.08555 & 0.07790 & 0.13746\\
+        \end{tabular}
+        \caption{N = 110 k = 12}
+        \label{tab:Results_final110}
+    \end{subtable}%
+
+    \begin{subtable}{.5\textwidth}
+      \centering
+        \begin{tabular}{*{4}{r}}
+        \textbf{p} &   \textbf{average} &       \textbf{min} &       \textbf{max} \\
+            \midrule
+            1 & 3.77435 & 2.30918 & 5.31532\\
+            2 & 2.25018 & 1.43730 & 3.30625\\
+            4 & 1.26255 & 0.93612 & 1.99715\\
+            8 & 0.63661 & 0.50116 & 0.99353\\
+            16 & 0.33111 & 0.26898 & 0.46761\\
+            32 & 0.19841 & 0.16313 & 0.33585\\
+        \end{tabular}
+        \caption{N = 220 k = 12}
+        \label{tab:Results_final220}
+    \end{subtable}%
+    \caption{Results for the final algorithm}
+    \label{tab:Results_final}
+\end{table}
+
+Since adult trees require between 11 and 14 iterations to ``grow'' we have used $k = 12$ for the forests. Now, for the input sizes, we have $N = 110, 220$ which were reasonable values for formulated model. The obtained results are gathered in Tables \ref{tab:Results_naive} and \ref{tab:Results_final}. a great variety of number processors were used ($1, 2, 4, 8, 16, 32$). For a better understanding of the behavior of both algorithms the figures below depict timing results, SpeedUp and Efficiency.
+
+\todo[inline]{Put figures}
+
 % section results (end)
 
 \section{Discussion} % (fold)
 \label{sec:discussion}
-\todo[inline]{this}
+
+
+
 % section discussion (end)
 
 \section{Conclusion} % (fold)

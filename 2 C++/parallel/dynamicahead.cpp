@@ -13,11 +13,6 @@ int main(int argc, char const *argv[])
 	}
 	if(argc < 3)
 	{
-		int forestSize = strtol(argv[1], &s, 10);
-		for(int i = 0 ; i < forestSize ; i++)
-		{
-			printf("%lf\n",fRand(1,std::sqrt(10)));
-		}
 		return 1;
 	}
 	
@@ -41,6 +36,9 @@ int main(int argc, char const *argv[])
 	int num_threads;
 	std::vector<int> order;
 
+	std::vector<int> systems_processed; // DEBUG
+    std::vector<int> symbols_translated; // DEBUG
+
 	begin = omp_get_wtime();
 	#pragma omp parallel shared(Forest,neighbors,metrics,forestSize,iterations,order)
 	{
@@ -54,8 +52,6 @@ int main(int argc, char const *argv[])
 			
 			for(int i = 0; i < forestSize; i++)
 			{
-				// double x = std::fabs((SIDE-1)*std::sin(i));
-				// double y = std::fabs(SIDE*std::cos(i*i));
 				double x = fRand(0,SIDE);
 				double y = fRand(0,SIDE);
 				Point p = {x,y};
@@ -71,9 +67,10 @@ int main(int argc, char const *argv[])
 						neighbors[i].push_back(j);
 					}
 				}
-				order = get_order(neighbors);
 			}
-
+			order = get_order(neighbors);
+			systems_processed = std::vector<int>(num_threads,0); //DEBUG
+			symbols_translated = std::vector<int>(num_threads,0); //DEBUG
 			
 		}
 
@@ -81,7 +78,6 @@ int main(int argc, char const *argv[])
 
 		int N = forestSize;
 		int T = iterations;
-		// int s = forestSize / num_threads;
 		int thread_num = omp_get_thread_num();
 		// ITERATE
 		#pragma omp for schedule(dynamic)
@@ -110,14 +106,12 @@ int main(int argc, char const *argv[])
 				Forest[i]->updateMetric(metrics[j-1],neighbors[i]);
 			}
 			Forest[i]->next();
-			double metric = Forest[i]->calculateMetric();
-			// #pragma omp critical(metrics)
-			// {
-				metrics[j][i] = metric;
-			// }
-		}
 
-		// printf("%d %d\n",thread_num,processed); //DEBUG
+			double metric = Forest[i]->calculateMetric();
+			metrics[j][i] = metric;
+			systems_processed[thread_num]++; //DEBUG
+			symbols_translated[thread_num] += Forest[i]->getState().size(); //DEBUG
+		}
 
 	}
 
@@ -146,6 +140,11 @@ int main(int argc, char const *argv[])
 	    	fprintf(f, "%d ", connected_components[i].size());
 	    }
 	    fprintf(f, "\n");
+	    fprintf(f,"Proc   Systems   Symbols\n");//DEBUG
+	    for(int i = 0; i < num_threads; i++)//DEBUG
+	    {//DEBUG
+	        fprintf(f,"  %02d  %03d  %03d\n",i,systems_processed[i],symbols_translated[i]);//DEBUG
+	    }//DEBUG
 	    fprintf(f,"Time : %f seconds\n", end-begin);
 	    fprintf(f,"\n=====================\n");
 	}

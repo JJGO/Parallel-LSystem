@@ -11,11 +11,6 @@ int main(int argc, char const *argv[])
 	}
 	if(argc < 3)
 	{
-		int forestSize = strtol(argv[1], &s, 10);
-		for(int i = 0 ; i < forestSize ; i++)
-		{
-			printf("%lf\n",fRand(1,std::sqrt(10)));
-		}
 		return 1;
 	}
 	
@@ -35,6 +30,10 @@ int main(int argc, char const *argv[])
 	std::vector<double> metrics(forestSize,0.0);
 
 	int num_threads;
+
+	std::vector<int> systems_processed; // DEBUG
+    std::vector<int> symbols_translated; // DEBUG
+
 ///// PARALLEL BLOCK
 	begin = omp_get_wtime();
 	#pragma omp parallel shared(Forest,neighbors,metrics,num_threads)
@@ -49,8 +48,6 @@ int main(int argc, char const *argv[])
 			
 			for(int i = 0; i < forestSize; i++)
 			{
-				// double x = std::fabs((SIDE-1)*std::sin(i));
-				// double y = std::fabs(SIDE*std::cos(i*i));
 				double x = fRand(0,SIDE);
 				double y = fRand(0,SIDE);
 				Point p = {x,y};
@@ -67,15 +64,15 @@ int main(int argc, char const *argv[])
 					}
 				}
 			}
+
+			systems_processed = std::vector<int>(num_threads,0); //DEBUG
+			symbols_translated = std::vector<int>(num_threads,0); //DEBUG
 		}
 
 		#pragma omp barrier
 
 		int thread_num = omp_get_thread_num();
 		// ITERATE
-		// int processed = 0;//DEBUG
-		
-		// int s = forestSize / num_threads;
 		for(int j = 0 ; j < iterations ; j++)
 		{
 			#pragma omp for schedule(dynamic)
@@ -84,8 +81,8 @@ int main(int argc, char const *argv[])
 				Forest[i]->next();
 				double metric = Forest[i]->calculateMetric();
 				metrics[i] = metric;
-				// processed++;//DEBUG
-				// printf("Proc %d working on tree %02d iteration %02d : %lf\n",omp_get_thread_num(),i,j,metrics[i] ); //VERBOSE
+				systems_processed[thread_num]++; //DEBUG
+				symbols_translated[thread_num] += Forest[i]->getState().size(); //DEBUG
 			}
 
 			#pragma omp for schedule(dynamic)
@@ -93,9 +90,7 @@ int main(int argc, char const *argv[])
 			{
 				Forest[i]->updateMetric(metrics,neighbors[i]);
 			}
-			// printf("Proc %d FINISHED iteration %02d\n",omp_get_thread_num(),j ); //VERBOSE
 		}
-		// printf("%d %d\n",thread_num,processed); //DEBUG
 	}
 ///// PARALLEL BLOCK
 	end = omp_get_wtime();
@@ -120,6 +115,11 @@ int main(int argc, char const *argv[])
 	    	fprintf(f, "%d ", connected_components[i].size());
 	    }
 	    fprintf(f, "\n");
+	    fprintf(f,"Proc   Systems   Symbols\n");//DEBUG
+	    for(int i = 0; i < num_threads; i++)//DEBUG
+	    {//DEBUG
+	        fprintf(f,"  %02d  %03d  %03d\n",i,systems_processed[i],symbols_translated[i]);//DEBUG
+	    }//DEBUG
 	    fprintf(f,"Time : %f seconds\n", end-begin);
 	    fprintf(f,"\n=====================\n");
 	}
@@ -128,6 +128,7 @@ int main(int argc, char const *argv[])
 	{
 		delete Forest[i];
 	}
+
 
 	return 0;
 }

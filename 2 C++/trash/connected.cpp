@@ -71,8 +71,8 @@ int main(int argc, char const *argv[])
 						neighbors[i].push_back(j);
 					}
 				}
-				order = get_order(neighbors);
 			}
+			order = get_order(neighbors);
 
 			
 		}
@@ -105,10 +105,10 @@ int main(int argc, char const *argv[])
 			// 	}
 			// }
 
-			if(j > 0)
-			{
-				Forest[i]->updateMetric(metrics[j-1],neighbors[i]);
-			}
+			// if(j > 0)
+			// {
+			// 	Forest[i]->updateMetric(metrics[j-1],neighbors[i]);
+			// }
 			Forest[i]->next();
 			double metric = Forest[i]->calculateMetric();
 			// #pragma omp critical(metrics)

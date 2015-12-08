@@ -8,7 +8,7 @@ CFLAGS =
 # -std=c++11
 HEADERS = symbol.h lsystem.h fractals.h
 OBJECTS = symbol.o lsystem.o fractals.o
-TARGETS = naive dynamicahead connected
+TARGETS = naive dynamicahead
 
 all: $(TARGETS)
 
@@ -16,9 +16,6 @@ naive:  naive.o $(OBJECTS)
 	$(CC) -fopenmp $(CFLAGS) $^ -o $@
 
 dynamicahead:  dynamicahead.o $(OBJECTS)
-	$(CC) -fopenmp $(CFLAGS) $^ -o $@
-
-connected:  connected.o $(OBJECTS)
 	$(CC) -fopenmp $(CFLAGS) $^ -o $@
 
 .cpp.o:
