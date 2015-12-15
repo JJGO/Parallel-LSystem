@@ -36,13 +36,13 @@ factor[('dynamicahead110',2)] = 1.15
 factor[('dynamicahead110',4)] = 1.15
 factor[('dynamicahead110',8)] = 1.12
 factor[('dynamicahead110',16)] = 1.15
-factor[('dynamicahead110',32)] = 1.22
+factor[('dynamicahead110',32)] = 1.18
 
 factor[('dynamicahead220',2)] = 1.12
 factor[('dynamicahead220',4)] = 1.35
 factor[('dynamicahead220',8)] = 1.22
 factor[('dynamicahead220',16)] = 1.32
-factor[('dynamicahead220',32)] = 1.37
+factor[('dynamicahead220',32)] = 1.32
 
 for mode in modes:
 

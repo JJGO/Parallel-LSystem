@@ -1,0 +1,488 @@
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[letterpaper,twoside,11pt]{article}
+
+\input{plantilla.tex}
+
+\pagestyle{fancy} % All pages have headers and footers
+\fancyhead{} % Blank out the default header
+\fancyfoot{} % Blank out the default footer
+\fancyhead[L]{Jose Javier Gonzalez Ortiz}
+\fancyhead[R]{EECS 587 : Parallel Computing} % Custom header text
+\fancyfoot[RO,LE]{\thepage} % Custom footer text
+
+
+\setlength{\parskip}{2mm}
+\setlength{\headheight}{13.6pt}
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{Parallel Implementation of Multiple Interdependent Lindenmayer Systems}} % Article title
+
+\author{
+\large
+\textsc{Jose Javier Gonzalez Ortiz}\thanks{\href{mailto:jjgo@umich.edu}{jjgo@umich.edu}}\\[2mm] % Your name
+\normalsize University of Michigan \\ % Your institution
+% \normalsize \href{mailto:jjgo@umich.edu}{jjgo@umich.edu} % Your email address
+% \vspace{-5mm}
+}
+\date{\today}
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Insert title
+
+\thispagestyle{fancy} % All pages have headers and footers
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+\vspace{-1em}
+\begin{abstract}
+
+\noindent This paper introduces a botanical model to realistically simulate the growth behavior of different types of forests. The model relies on L-Systems for the individual behavior, and local interaction for the interdependence. We provide both a serial implementation and parallel implementation designed for a shared memory machine supporting OpenMP. The algorithm is modified in order to minimize thread communication and lock operations. The algorithm successfully parallelizes the time dimension to minimize the runtime. The forest model obtained is satisfactory and the parallelization techniques used are not bound to the problem at hand, and can be extended to a number of  simulations with local dependency.
+
+\textbf{Keywords:} L-Systems, forest simulation, botanical models, parallel processing, OpenMP
+\end{abstract}
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+\begin{multicols}{2} % Two-column layout throughout the main article text
+
+\section{Introduction}
+% \vspace{-6mm}
+\lettrine[nindent=0em,lines=2]{M}
+odern techniques for botanic and arboreal growth simulation rely in specific and dedicated models to correctly recreate the behavior of different types of plants. This creates a segmented and disconnected variety of models and techniques. As A. Lindenmayer and Przemyslaw described in \cite{Prusinkiewicz:1996:ABP:235579}, almost all botanical structures can be successfully modeled by the so called Lindenmayer Systems.
+
+However, raw L-Systems are not complex enough to model most botanical structures, and therefore we need to include a parametric implementation to successfully model these types of structures. Moreover, parametric L-Systems portray a deterministic behavior in spite of depending on a number of initial parameters and conditions. To cope with this limitation, randomness is employed in the traditional form described in \cite{Prusinkiewicz:1996:ABP:235579}, by using Stochastic-Parametric L-Systems. These systems will have production rules that will not only rely on several parameters to correctly scalate the complexity of the system, but  also apply these rules using a source of randomness to choose between a number of specified rules.
+
+Another aspect that should be taken into account is the fact that botanical growth almost never occurs in a isolated fashion. Therefore, we will be interested in looking at a framework that can accommodate the simultaneous derivation of multiple L-Systems. Having multiple stochastic L-Systems produces a non-realistic result, as will be discussed later. To compensate for this caveat the concept of Interdependent L-Systems will need to be defined.
+
+In this paper we investigate the use of Interdependent L-System to realistically model the growth of a forest. We analyze several parallel implementations of this problem in a shared memory machine using OpenMP. L-Systems are parallel rewriting grammars, which initially would seem to simplify the problem due to the inherent parallel nature of these systems. Nevertheless, this derivation step leads to highly uneven amounts of work in a great number of scenarios. Furthermore, as we shall see later, adding the interdependence to the systems serializes the problem greatly, since after every timestep each system will need to communicate a number of metrics to a variable number of neighboring systems. This problem will produce a scenario experienced by a great amount of local simulation techniques.
+
+We will introduce several parallel algorithms with increasing complexity and increasing speedup, and compare their behavior under different types of datasets. From a simulation perspective, this would translate into different ecosystems. The final algorithm will calculate the connected components of the forest graph to initially subdivide the problem in equally complex albeit not equally balanced subproblems, and introduce a general approach to tackle this subproblems. To accomplish this, the algorithm will parallelize the time dimension by allowing some L-Systems to carry out further iterations as long as the correctness constraints are met. We will also analyze the bigger bottleneck of the algorithm and the way it tries to cope with the variability of input systems.
+
+\textbf{Overview:} We will start by providing a background in canonical, parametric and stochastic L-Systems in Section \ref{sec:background}. Section \ref{sec:interdependence} will elaborate the model used to realistically simulate the problem and will discuss the serial implementation. The parallel algorithms designed to solve this problem are discussed in Section \ref{sec:parallelization} and their associated results are shown in Section \ref{sec:results} and analyzed in Section \ref{sec:discussion}.
+
+\subsection{Previous Work} % (fold)
+\label{sub:previous_work}
+\textbf{General L-Systems:} Prusinkiewicz and Lindenmayer gave the basic definition to the L-System algorithm and structure in \cite{Prusinkiewicz:1996:ABP:235579}. This was further extended by the work carried out in \cite{Parish:2001:PMC:383259.383292,Prusinkiewicz:1994:ST:192161.192254,Prusinkiewicz:2001:UPI:383259.383291}
+
+\textbf{Parallelizing L-Systems:} Lacz and Hart introduced the use of manually written pixel shaders to compute L-Systems \cite{Lacz04proceduralgeometry}. A distributed memory approach making use up to 8 CPUs and the Message Passing Interface (MPI) was described in \cite{4392608}. An algorithm for the Parallel Generation of L-Systems was introduced by \cite{LIPP-2009-PGL}. The approach was appropriate for both GPU and multi-core CPUs, parallelizing both the derivation and the interpretation of given L-Systems. The implementation provided was generic and supported parametric, stochastic and context sensitive productions. The work was further extended in \cite{LIPP-2010-PGMS} to make the algorithm work with multiple L-Systems.
+
+\textbf{Forest Simulation:} L-Systems are within the most popular grammars to satisfactory model botanical structures. The definitions introduced by \cite{Prusinkiewicz:1996:ABP:235579} were later improved to more realistic three dimensional trees in \cite{4055766}. Since then, both models have been used in a number of forest growth models.
+
+The model proposed by \cite{KurthSloboda2002} provides a wonderful framework to model the interdependence of L-Systems. Geometrical interpretation of parameters was used to calculate shadow cones and a carbon allocation economy was used to successfully control the growth of the trees. A later paper introduced a quasi-physical simulation of large-scale dynamic forest scenes by introducing a similar growth model and a wind field to account for environmental factors. Finally, \cite{Runions07modelingtrees} introduced a new model by employing a three dimensional version of the space colonization algorithm.
+% subsection previous_work (end)
+
+%------------------------------------------------
+
+\section{Background} % (fold)
+\label{sec:background}
+
+\subsection{Definition} % (fold)
+\label{sub:definition}
+
+The work presented in this paper is based on L-systems. This modeling structure is briefly introduced in this section.
+
+\emph{L-Systems} are parallel rewriting systems and a type of formal grammar. They are now commonly referred to as \emph{parametric} L-systems and defined as a tuple:
+\begin{equation}
+	\textbf{G} = (V, \omega, P)
+\end{equation}
+where
+\begin{compactitem}
+\item $\textbf{V}$ (\emph{alphabet}) is a set of symbols containing the elements in the string that can be replaced.
+\item $\boldsymbol\omega$ (\emph{axiom}) is a string of symbols from $V$ defining the initial state of the system.
+\item $\textbf{P}$ is a set of \emph{production rules} which define the way variables can be replaced with combinations of constants and variables. Each rule is composed by a \emph{predecessor} and a \emph{successor}. The successor will consist of a list of symbols that will replace the predecessor. The predecessor usually contains only one symbol, if it involves more, the system is called \emph{context sensitive}. If a production rule is not specified for a symbol, the identity production is assumed.
+\end{compactitem}
+
+\emph{Parametric L-systems:} We can further expand the definition of L-systems to accommodate parameters. In a parametric grammar, each symbol in the alphabet has a list of parameters associated. Parameters are usually real valued, but there is no constraint in the mathematical structures that can be used. Production rules need to be extended to deal with parametric symbols. Parameters can be both \emph{local} or \emph{global}, depending on whether they belong to the current predecessor or not. Parameters are used both in conditional statements to choose between different production rules, and for modifying the parameters of the symbols in the successor.
+
+In the following example \eqref{eq:example} we can see the behavior, where $g$ is a global parameter.
+\begin{equation}
+\label{eq:example}
+	A(x,y) : x < 2 \quad\rightarrow\quad A(g,x+1) C B(3,y)
+\end{equation}
+
+\emph{Stochastic L-systems:} In order to deal with non-deterministic models, randomness can be introduced in the model by defining for each production rule $p \in P$ a set of production rules $\overline{p} = \{p_1,p_2\ldots p_k\}$ with associated probabilities $\overline{q} = \{q_1,q_2\ldots q_k\}$ and a random variable $R$ that will evaluate the rule $p$ as $p_i$ with probability $q_i$. This kind of grammars are tremendously useful when generating great amounts of L-systems, because otherwise all the elements in the group would look identical.
+
+% subsection definition (end)
+
+\subsection{Application} % (fold)
+\label{sub:application}
+
+After defining the specific type of grammar or combination of grammars, to generate the geometry described by a L-System we need to execute two stages: the \emph{derivation} of the final symbol string, and the \emph{interpretation} of such string to a particular geometry or structure.
+
+\textbf{Derivation:} this phase involves a number of successive interpretation iterations. In each iteration, all symbols in the current state are translated in parallel by using the production rules. For each symbol, a production rule with a matching predecessor and condition is searched. Once found, the symbol will be substituted by the parametric symbols in the successor. These parametric symbols are evaluated using the global parameters at the current iteration and the local parameters of the symbol that is being substituted. The initial state is the axiom of the system. The state string is updated after each iteration, so the final state is specified by the arbitrary number $k$ of iterations that we have defined.
+\vfill
+\columnbreak
+\textbf{Interpretation:} after obtaining the final state string of symbols, a set of interpretation rules will have to be applied to extract the information of the system. Most commonly, a geometric representation is generated by using two or three dimensional Turtle Geometry \cite{abelson1986turtle}. This translates the commands into modifications of the turtle state, which is represented by a position in space and a angle orientation in such space. Most modifications can be usually associated with euclidean affine transformations. However, \emph{branching} (or \emph{bracketed}) systems will also use push and pop commands to input the current \emph{turtle state} into a stack for later recovery.
+% subsection application (end)
+% section background (end)
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.63\textwidth]{trees1.png}
+    \caption{}
+    % \label{fig:balanced}
+  \end{subfigure}%
+\end{figure}
+\begin{figure}[H]
+\ContinuedFloat
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.63\textwidth]{trees2.png}
+    \caption{}
+    % \label{fig:unbalanced}
+  \end{subfigure}
+  \caption{Examples of trees with ternary branching$^{\text{\cite{Prusinkiewicz:1996:ABP:235579}}}$}
+   \label{fig:ttrees}\end{figure}
+
+\section{Interdependence} % (fold)
+
+\label{sec:interdependence}
+
+Three dimensional parametric and stochastic L-Systems are a really powerful tool when modeling complex botanical structures such as monopodial, sympodial and ternary trees. By varying global parameters we can regulate some fixed parameters, such as the way gravity affects the tree or the branching angle that the tree will follow. We can visualize these ideas in the ternary trees shown in Figure \ref{fig:ttrees}.
+
+% However, whereas we need stochastic systems as a source of variability to realistically emulate the structure of forests, there is a enormous caveat using them for multiple independent L-systems. To look into the problem we consider the size of a state string $S$ as $|S| = L$. If each production rule translates one symbol into two, and we only have deterministic production rules, the output will have size $2L$. However, if each production rule only substitutes with a $50\%$ chance then we only expect half of the symbols to change, and the expected size of the output string will be $3L/2$. So we can find a proportionality between input and output sizes and this will deem an exponential growth. However, if one string gets a significantly greater or lower amount of successful production rules, the next iteration will be affected because having more symbols in the string will allow the system to grow faster and viceversa.
+
+However, whereas we need stochastic systems as a source of variability to realistically emulate the structure of forests, undesired behavior arises when using it carelessly as shown in Figure \ref{fig:stochas}. Having independent systems growing in parallel usually produces unrealistic and odd looking results, where one of the plants will have grown bigger after a few iterations (and will keep doing so); whereas other plants have carried average iterations resulting in similar systems. Therefore we need some mechanism to synchronize the growth of the systems.
+
+We can employ both the global parameters to the system, and universal parameters to the whole group of systems, to thwart this undesired behavior. This was done in a similar fashion by \cite{KurthSloboda2002}. These parameters display the relation between different systems or different parts of the same system, and are usually updated after each derivation step with the information provided by different metrics on the current string state. We can differentiate two types of relations depending on the locality of the parameters:
+
+
+\begin{compactenum}[a)]
+\item \textbf{Selfdependence} - Relation between different parts of the same system. For example, we can consider a tree whose production rules depend on the amount of light received by each branch. This system would need to update the growth parameters after each timestep, considering the shadows projected by its own branches.
+\item \textbf{Interdependence} - A more complex case that involves relations between potentially different types of L-Systems, and that reflects a reciprocal interaction between them. We can extend the previous example to consider a number of trees that not only consider the shadow of each to itself, but also the shadows projected from other trees.
+\end{compactenum}
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=.45\textwidth]{stochastic.png}
+    \caption{Simulated growth of several simple stochastic L-Systems$^{\text{\cite{Prusinkiewicz:1996:ABP:235579}}}$}
+    \label{fig:stochas}
+\end{figure}
+ Independent and selfdependent systems provide a embarrassingly parallel problem. Since each system can be analyzed without considering the others, they can be treated as individual problems. Load balancing can be achieved with a simple manager-worker scheme using a shared queue. However, interdependent groups of L-Systems can pose a nontrivial parallelization given appropriate constraints. For this paper we have used a local resource economy which translates in the following behavior. A tree will only be affected by the trees within a radius R, which from now onwards will referred to as his \emph{neighbors}. If a tree is bigger than the average size of their neighbors then it will be harder for it to grow at the next iteration, preventing the overgrowth behavior depicted in Figure \ref{fig:stochas}. If a tree is smaller than the average size of its neighbors, then it will be more likely for it to grow in the next iteration, compensating the randomness in previous iterations. These constraints need to be used since, whereas randomness is a good source of variability for the population, it deeply alters the growth rate of different systems.
+ % This leads to undesired and unrealistic behaviors, as we discussed previously.
+
+ We still need to define what the \emph{size} of a tree means from an analytical viewpoint. We will use the concept of \emph{metrics}: functions that take as input a list of parametric symbols, and output a list of real valued parameters. The output will reflect different properties of the system. The metric used in our implementation measured both the number of nodes (points where branching occurs) and leaves (terminal points of the system) to account for the dimensions of the tree.
+% \vfill
+% \columnbreak
+
+ A serial implementation of the described scenario was carried out%\footnotemark.
+ A fixed number of different L-Systems composed by a given probability distribution of monopodial, sympodial and ternary trees was randomly distributed in a square surface. All these tree systems where slightly modified from the Honda canonical definitions given in \cite{Prusinkiewicz:1996:ABP:235579} to accommodate for randomness in the growth. Next, a neighbor look-up list was initialized, since neighboring relations do not change throughout the simulation. For a fixed number $k$ of iterations, each system was applied the derivation procedure and its metric recalculated and stored in a global array. Then, before starting the next iteration, the growth parameter of each system was updated using the metrics from its neighbors.
+
+This implementation allows for huge variability of environments. Modifying the probability distribution of trees, the density and the number of iterations allow us to model from old, dense boreal forests to a widely spaced savanna.
+
+
+%\footnotetext{All the code for this project can be found in \href{http://github.com/JJGO/Parallel-LSystem}{http://github.com/JJGO/Parallel-LSystem}}
+
+% section interdependence (end)
+
+\vspace{-2em}
+
+\section{Parallelization} % (fold)
+\label{sec:parallelization}
+
+When looking at a decently sized group of L-Systems ($N \approx 100$) and a considerable number of iterations ($k \approx 14$), the serial implementation starts taking seconds on most modern machines. Trying to increase any of the parameters goes to the domain of minutes and even hours. Therefore, the problem can use parallelization techniques in order to reduce the computation time by introducing more processing power. For this analysis we have chosen a shared memory architecture using the OpenMP application programming interface in C++. In this paper we are going to focus in the parallelization of the derivation step for the interdependant system described in Section \ref{sec:interdependence}.
+
+The interpretation step of multiple L-Systems is an inherently embarrassingly parallel problem since all of the systems are independent when it comes to interpretation. To further optimize the parallelization of the interpretation step, one can look at parallelizing the interpretation of an individual L-System. This can be easily done for \emph{non-branching} systems by replacing each symbol with its associated affine transformation (4x4 matrix). Since matrix multiplication is an associative operation we can easily solve the problem by using a \emph{reduce} function. \emph{Branching} systems can follow a similar approach but the complexity escapes the scope of the current paper. A more  detailed explanation can be found in \cite{LIPP-2010-PGMS}.
+
+\subsection{Dynamic scheduling} % (fold)
+\label{sub:dynamic_scheduling}
+
+% subsection dynamic_scheduling (end)
+
+An initial naive parallelization can be used by just simply parallelizing each one of the derivation iteration steps. Using a dynamic scheduling algorithm, the processors will evenly split the work and solve each iteration in parallel. We consider dynamic scheduling instead of static scheduling to get a better load balancing scheme. Even though we know the amount of subproblems from the start, we cannot evenly divide them into the processors since the complexity of each system will be variable due to the  stochastic formulation that the trees are following. Dynamic scheduling will be dealt in a \emph{first-come, first-served} manner to optimize allocation
+
+As we shall see later in Section \ref{sec:results}, this approach decreases the overall time but is far from perfect. The main disadvantage associated with this approach comes from the fact that two barriers need to be set up  at each iteration to ensure correctness. This will imply that for $p$ processors and $N$ similarly sized trees, at the end of each iteration approximately $r \equiv N \mod p$ processors will be still working and $p - r$ will be idle, waiting for the rest to finish and wasting processing power. On average, this means that half of the processors will be idle for approximately $\frac{1}{\ceil{N/p}}$ part of the time. As $p$ grows larger this fraction also becomes larger which is undesirable. Furthermore, the presence of the two implicit \emph{barriers} per iteration produces a great overhead since all threads will be synchronized after each iteration. Therefore, we will need to reduce all of this communication to a minimum.
+
+% subsection dynamic_scheduling (end)
+
+\subsection{Lookahead strategy} % (fold)
+\label{sub:lookahead_startegy}
+
+Given the constraints of the problem we can enhance the parallelization by taking into account two factors:
+
+\textbf{Local dependence} - As we explained before, the simulation has only a local dependence from a tree to its neighbors. Therefore, we need not wait for every tree to finish iteration $i$ to start iteration $i+1$. A given tree $t$ at iteration $i$ only needs the metrics of its neighbors at iteration $i$ to start the derivation phase. By applying this mechanism we can make use of every processor available all the time; however, we will need to introduce series of constraints into the implementation.
+
+An additional verification step must be performed to test if all the neighbors have in fact reached at least the current iteration, and proceed only if the minimum of their iterations is bigger or equal the iteration of the system at hand.
+
+The shared array that previously stored the metrics at each iteration will need another dimension for all the iterations, otherwise, we could potentially be reading a metric from a future iteration of a given neighbor, and correctness would be violated. Therefore, we will need to store for each tree $t$ the metric at every iteration $i$.
+
+Since no two processors will try to update the same metric or iteration variable during the entire program and reading not yet updated iteration variables does not affect the correctness; we will not need mutual exclusion to modify the metric variables. Accordingly, the communication is clearly lessened to only the neighbor checking and the work scheduling.
+
+\textbf{Geometry of the subproblems} - Since the simulation is running in parallel over all the $N$ trees for $k$ iterations we know in advance that $N \cdot k $ derivation steps will need to be done. We can dynamically schedule all this subproblems via an ordered work queue, so that the processors can take one subproblem at a time and if the derivation is possible (the neighbors have reached all the previous iteration) they will proceed, otherwise they will return the work to the queue and try the next available subproblem.
+
+Since we are using an approach that relies on the connectivity of the trees in the forest, we can express the neighboring relations as a undirected graph. An arbitrary queue will render a great amount of the neighbor checking steps unsuccessful, since we cannot predict which vertices have been derived yet and which not.
+
+However, we can make use of the inherent geometry of the problem by employing a graph traversing algorithm such as \emph{Breadth First Search}. By performing an initial \emph{BFS} traversal into the graph and storing this precalculated order we can ensure that if at every iteration, the nodes are interpreted in the same order, then we will be maximizing vertices whose neighbors all have the same iteration value.
+
+Consequently, the algorithm will start deriving at a given starting point of the graph and traversing it following BFS. When the other end is reached, a number of processors may not have work to do in said end, so they can go back to the starting point of the graph and  with a really high probability, they will be able to derive the next iteration of the vertices there, maximizing the processing power.
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=.4\textwidth]{grafo.png}
+    \caption{Example of the algorithm behavior between iterations $i$ and $i+1$ with $p = 4, N = 10$}
+    \label{fig:graph}
+\end{figure}
+We can see a diagram that reflects this process for a small input in Figure \ref{fig:graph}. With $p = 4$ and $N = 10$, at the end of iteration $i$, two processors would be idle in the barrier.Now, we can allocate them with work in the opposite side of the graph so they can start deriving iteration $i+1$.
+
+
+\vfill
+\columnbreak
+With all this optimizations, the program works as fast as before when $p \mid N$, and much faster when $N \mod p$ is really small. Since the previous implementation involved a big fraction of the processors being idle for an entire derivation step and the complexity of the derivation steps grows exponentially, the new algorithm enhances the simulation runtime significantly.
+
+
+% subsection lookahead_startegy (end)
+
+\subsection{Connected components optimization} % (fold)
+\label{sub:connected_components}
+
+A further optimization can be made. The main disadvantage of the solution proposed in section \ref{sub:lookahead_startegy} comes from the fact that it introduces a whole neighbor checking phase that can consume a non-negligible amount of resources if the graph presents great connectivity. Also, the simulation uses as inputs dense and sparse groups of trees in order to satisfactorily model different types of environments. This implies that in some cases we will have one single highly connected graph, and in other cases we may have several smaller subgraphs or even individual vertices.
+
+Moreover, as briefly discussed in the previous section, the neighbor checking may be unnecessary in some cases. Specifically, when all processors are executing trees in the same iteration, neighbor checking needs not be done. By using a series of flag variables we can check if all the processors are in the same iteration and skip the neighbor checking.
+
+In addition, to improve the algorithm we can also make use of the fact that we are performing a initial BFS to compute an order of visit to the vertices and also identify the different connected components of the graph. This is useful, since connected components in the graph render completely independent subgroups of L-Systems that will not share any information whatsoever during all the iterations. Using this information we can split the main queue into smaller queues, which would reduce the overhead of scheduling the work. We just have to make sure that for a connected component with $n_i$ nodes, the number of processors in that queue is always $p_i < n_i$. A simple way to solve this problem is allowing idle processors to dynamically jump from queue to queue until they find work they can process.
+
+% subsection connected_components (end)
+
+\subsection{Splitting L-Systems} % (fold)
+\label{sub:splitting_l_systems}
+
+To try to extend the parallelization further, an attempt was made to parallelize the derivation of individual L-Systems. This rendered a problem when either $N$ was really small or $k$ was exceedingly big. To successfully divide a L-System into smaller work items, we can use the fact that L-Systems are parallel rewriting grammars. Since all the L-Systems covered in this implementation are context free, we can evenly divide the number of symbols in the system into $m$ different pieces and add them into the dynamic queue. It is important that they are not dispersed in the queue, since as we analyzed before, the neighbor checking pattern works better when given a BFS order for the nodes. The L-Systems were slightly modified to cope with the multiple updates that now a derivation step needs to do. The iteration value will not change until the last derivation part is finished.
+
+Following this scheme, %and building on top of the previous optimizations
+we successfully reached a correct implementation that splits the work for L-Systems into several subproblems. This strategy is only applied when there are idle processors that depend on a concrete L-System to continue their work. Unfortunately, the overhead involved in checking if one L-System is bottlenecking the derivation and maintaining a queue with partial L-System states rendered the solution inefficient. By adding the splitting L-Systems technique,  the serial was increased by an order of magnitude for almost all inputs. Consequently, this implementation was not used for the final results.
+
+% subsection splitting_l_systems (end)
+
+% section parallelization (end)
+
+\section{Results} % (fold)
+\label{sec:results}
+
+To thoroughly test the parallelization, the parallelization techniques described in section \ref{sec:parallelization}, were implemented incrementally and tested independently. As data inputs we used a variety of tree models including monopodial, sympodial and ternary trees depending on the density properties of the forest. They all shared the same defining parameters, since forests are usually made of trees with similar characteristics. Randomness was employed to place the points in a plane. A square surface was used, whose size was randomly established at the beginning. The value for the size oscillated within the range $\sqrt{\sqrt{N}} \leq s \leq \sqrt{2N}$, since bigger sizes led to very sparse systems and smaller systems produced highly concentrated systems,  and neither of them resembled a realistic forest model. Therefore, by randomizing the area we are getting a random density for each testcase.
+
+As we also explained in previous section randomness is a crucial part in the derivation of stochastic L-Systems. At the interpretation of every nontrivial symbol, randomness is used to decide between using the default production rule or the plain identity. This coupled with the interdependence strategy models the forest behavior as desired.
+
+We made an analysis with numerous values for $N$ and $p$ and realized that in general, the strategies outlined in Section \ref{sub:dynamic_scheduling} and \ref{sub:lookahead_startegy} have significant improvement but the optimization outlined in section \ref{sub:connected_components} was only marginally better than \ref{sub:lookahead_startegy}. The latter version worked in less time for a really specific type of inputs and in general, the speedup was compensated by the added overhead.
+
+Therefore, in the figures and plots we are going to differentiate between the initial algorithm with just sequential dynamic scheduling, which will be denominated ``\emph{dynamic}'', and the one that takes the rest of the optimizations into account, which will be referred to as the ``\emph{lookahead}'' algorithm. Since adult trees require between 11 and 14 iterations to ``grow'' we have used $k = 12$ for the forests. Now, for the input sizes, we have $N = 65, 110, 220$ which were reasonable values for formulated model. Smaller sizes did not involve enough work, whereas bigger sizes led to almost identical results as $N = 220 $
+
+\subsection{Timing results} % (fold)
+\label{sub:timing_results}
+The obtained timing results are gathered in Tables \ref{tab:Times_dynamic} and \ref{tab:Times_lookahead}. A great variety of number processor amounts were used ($1, 2, 4, 8, 16, 32$). Averages were taken in order to get uniform results for the different random inputs and to eliminate potential machine inefficiencies introduced in the execution of the program.
+
+For a better understanding of the behavior of both algorithms for the data covered in both tables, the figures depicting timing results, SpeedUp and Efficiency are provided (Figures \ref{fig:times}, \ref{fig:SpeedUp}, \ref{fig:Efficiency}).
+
+\begin{table}[H]
+    \begin{subtable}{.5\textwidth}
+      \centering
+        \begin{tabular}{*{7}{r}}
+        $ N \setminus p$ &   \multicolumn{1}{c}{\textbf{1}} &\multicolumn{1}{c}{\textbf{2}} &\multicolumn{1}{c}{\textbf{4}} &\multicolumn{1}{c}{\textbf{8}} &\multicolumn{1}{c}{\textbf{16}} &\multicolumn{1}{c}{\textbf{32}}\\
+            \midrule
+            65 & 1.060 & 0.767 & 0.411 & 0.262 & 0.121 & 0.104 \\
+            110 & 1.881 & 1.241 & 0.675 & 0.412 & 0.203 & 0.152 \\
+            220 & 3.462 & 2.418 & 1.324 & 0.682 & 0.388 & 0.279 \\
+        \end{tabular}
+        \caption{Times for the dynamic algorithm ($k = 12$)}
+        \label{tab:Times_dynamic}
+    \end{subtable}%
+
+    \begin{subtable}{.5\textwidth}
+      \centering
+        \begin{tabular}{*{7}{r}}
+        $ N \setminus p$ &   \multicolumn{1}{c}{\textbf{1}} &\multicolumn{1}{c}{\textbf{2}} &\multicolumn{1}{c}{\textbf{4}} &\multicolumn{1}{c}{\textbf{8}} &\multicolumn{1}{c}{\textbf{16}} &\multicolumn{1}{c}{\textbf{32}}\\
+            \midrule
+            65 & 1.150 & 0.734 & 0.363 & 0.191 & 0.112 & 0.077 \\
+            110 & 1.817 & 1.036 & 0.594 & 0.285 & 0.160 & 0.094 \\
+            220 & 3.295 & 2.380 & 1.073 & 0.538 & 0.306 & 0.174 \\
+        \end{tabular}
+        \caption{Times for the lookahead algorithm ($k = 12$)}
+        \label{tab:Times_lookahead}
+    \end{subtable}%
+
+    \caption{Timing results (in seconds) for both algorithms }
+    \label{tab:Times}
+\end{table}
+
+
+
+
+As we see in Figure \ref{fig:times}, both algorithms successfully parallelize the problem. The \emph{lookahead} algorithm runs on average faster than the \emph{dynamic} algorithm, roughly by a factor of two.
+
+\begin{figure*}
+  \centering
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.93\textwidth]{../3 Analysis/time_110.png}
+    \caption{$N = 110$}
+    \label{fig:times110}
+  \end{subfigure}%
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.93\textwidth]{../3 Analysis/time_220.png}
+    \caption{$N = 220$}
+    \label{fig:times220}
+  \end{subfigure}
+  \caption{Logarithmic plot of times for different number of processors and inputs}
+  \label{fig:times}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.99\textwidth]{../3 Analysis/SpeedUp.png}
+    \caption{Speed-Up}
+    \label{fig:SpeedUp}
+  \end{subfigure}%
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.99\textwidth]{../3 Analysis/Efficiency.png}
+    \caption{Efficiency}
+    \label{fig:Efficiency}
+  \end{subfigure}
+  \caption{Speed-Up and Efficiency plots for the both algorithms and different input sizes}
+\end{figure*}
+
+\begin{table*}[t]
+	\null\hfill
+    \begin{subtable}{.45\linewidth}
+      % \centering
+        \begin{tabular}{*{5}{r}}
+        \textbf{p} &  \textbf{ideal} & \textbf{average} &       \textbf{min} &       \textbf{max} \\
+            \midrule
+            1 &     1320.0 &    1320.0 &    1320.0 &    1320.0\\
+            2 &      660.0 &     660.0 &     647.0 &     672.0\\
+            4 &      330.0 &     330.0 &     315.0 &     345.0\\
+            8 &      165.0 &     165.0 &     131.0 &     201.0\\
+            16 &       82.5 &      82.5 &      47.0 &     137.0\\
+            32 &       41.2 &      41.2 &      18.0 &     100.0\\
+            
+        \end{tabular}
+        \caption{Load balancing of systems}
+        \label{tab:Load_systems}
+    \end{subtable}%
+   	\hfill
+    \begin{subtable}{.5\linewidth}
+      % \centering
+        \begin{tabular}{*{5}{r}}
+        \textbf{p} & \textbf{ideal} & \textbf{average} &       \textbf{min} &       \textbf{max} \\
+            \midrule
+            1 &  1553837.0 & 1553837.4 & 1553837.0 & 1553837.0\\
+            2 &   734333.5 &  734333.8 &  731044.0 &  737623.0\\
+            4 &   365782.5 &  365782.7 &  360182.0 &  371576.0\\
+            8 &   184617.5 &  184617.5 &  177446.0 &  191610.0\\
+            16 &    96045.2 &   96045.3 &   88506.0 &  104027.0\\
+            32 &    45396.5 &   45396.5 &   38811.0 &   54650.0\\
+        \end{tabular}
+        \caption{Load balancing of symbols}
+        \label{tab:Load_symbols}
+    \end{subtable}%
+    \hfil\null
+    \caption{Results for the load balancing analysis for $N = 110$ and $k = 12$}
+    \label{tab:Load}
+\end{table*}
+
+Looking at the SpeedUp and Efficiency (Figure \ref{fig:SpeedUp} and \ref{fig:Efficiency}), we see that in fact the SpeedUp of the \emph{lookahead} algorithm behaves not only better than the \emph{dynamic} one, but also for a large enough input $N$, it gives an almost linear speedup. Bigger input sizes were also analyzed but the results obtained were almost identical to those for $N = 220$. For $N=65$ the SpeedUp is worse because the amount of work is not large enough to compensate for the communication overhead that the dynamic scheduling involves. The SpeedUp for the \emph{lookahead} algorithm is almost linear whereas the \emph{dynamic} algorithm presents a linear SpeedUp for $p < 16$ and greatly decreases for $p = 32$.
+
+Efficiency analysis gives some interesting results. First for almost all of the testcases the efficiency is not strictly decreasing, which means that the algorithms are able to parallelize better for some specific values of $p$. However, we can see a decreasing trend for all of the cases, with the \emph{dynamic} decreasing faster than the \emph{lookahead} which agrees with the results of the SpeedUp.
+
+% subsection timing_results (end)
+
+\subsection{Load Balancing} % (fold)
+\label{sub:load_balancing}
+
+Load balancing measurements were taken for both algorithms, however, with the given inputs the results were practically indistinguishable (they both load balance correctly, the second algorithm is just able to do it faster), so we can just focus in whether the load balancing is happening correctly or not. We considered both the load balancing of systems and the load balancing of symbols and got averages of the average, minimum and maximum case in each scenario. We also computed the ideal load balancing by dividing the total number of symbols/systems by the amount of processors. This was all done for different values of $N$ but as before, the results were identical for the different values, so only $N = 110$ is provided as a matter of simplicity. We can see the results in Table \ref{tab:Load}.
+
+Again, for a better understanding of the gathered results, accompanying Figures are provided in \ref{fig:Load_systems} and \ref{fig:Load_symbols} that depict both the load balancing of symbols and systems in a logarithmic scale.
+
+Using this figures and tables we can confirm that the dynamic scheduling approach proposed in Section \ref{sub:dynamic_scheduling} is satisfactory. Figure \ref{fig:Load_systems} reveals that systems are not being load balanced. This was expected, since one of the problems we faced in this implementation was that parametric stochastic L-Systems have a variable complexity and therefore dividing them evenly between the processors via static scheduling would give subpar performance. Due to this fact we can observe the inmense variability that minimum and maximum amount of systems offer, in order to accomodate for the variable complexity of L-Systems.
+
+\begin{figure*}
+  \centering
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.99\textwidth]{../3 Analysis/Load/systemsnaive110.png}
+    \caption{Load Balancing of systems}
+    \label{fig:Load_systems}
+  \end{subfigure}%
+  \begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.99\textwidth]{../3 Analysis/Load/symbolsnaive110.png}
+    \caption{Load Balancing of symbols}
+    \label{fig:Load_symbols}
+  \end{subfigure}
+  \caption{Results for the load balancing analysis for $N = 110$ and $k = 12$}
+\end{figure*}
+
+\vfill
+\columnbreak
+Figure \ref{fig:Load_symbols} truly indicates that load balancing is happening as expected and that all processors are doing an equal amount of work. In both figures we can appreciate that the ideal case is coincidental with the average case, but for symbol balancing we can see that maximum and minimum are extremely close to the ideal, suggesting that no processor is having a substantially larger or smaller amount of work.
+
+% subsection load_balancing (end)
+
+% section results (end)
+
+\section{Discussion} % (fold)
+\label{sec:discussion}
+
+Multiple interdependent stochastic and parametric Lindenmayer systems are able to realistically simulate the growth behavior of a forest. Varying the L-Systems employed and the density of the trees allow us to model different types of environments, ranging from dense boreal forests to widely spread savannas. However, as with many procedural simulation techniques, the deriving cost comes at a price and if we want to simulate environments of considerable size, parallelization must be made to reduce the computing time needed.
+
+From the results obtained in section \ref{sec:results} we can conclude that the parallelization was successful and linear speedup was achieved for the final algorithm outlined in section \ref{sub:connected_components}. It is important to note that as $N = 65$ showed, the speedup will only hold if the input size is big enough for the amount of processors used. This is a fundamental characteristic of this problem. As with almost any type of parallelization, the communication will be the biggest burden to speedup and efficiency. In this particular problem, the communication is dealt via the dynamic scheduling algorithm described in section \ref{sub:dynamic_scheduling}. This involves a nontrivial amount of interaction between the processors.
+
+\vfill
+\columnbreak
+Furthermore, time profiling for the execution revealed that we cannot easily increase the Speedup shown in Figure \ref{fig:SpeedUp} because time needs to be spent correctly scheduling the work. Otherwise, in a static scheduling, the complexity variability of the L-Systems completely ruins the load balancing and the results are far worse.
+
+It is also important to mention that several other values of $k$ were tried for different input sizes and number of processors. As we explored in section \ref{sub:lookahead_startegy}, the plain dynamic scheduling behaves worse for larger values of $k$. However, for the cases when the difference was significantly bigger ($k > 16$), the model was overconvoluted and did not reflect any more the true appearance of a forest. Because of this, the results have not been analyzed. Albeit helping the case for the look-ahead algorithm, they do not represent a realistic scenario.
+
+In conclusion, both the dynamic scheduling and the look-ahead strategy based in the BFS traversal have proved to be successful strategies to tackle the parallelization of the simulation. The connected components derivation just enhances marginally the behavior without adding a significant amount of overhead into the algorithm.
+
+
+% section discussion (end)
+
+\section{Conclusion} % (fold)
+\label{sec:conclusion}
+
+This report explores the viability of using parametric stochastic interdependent Lindenmayer systems to model the growth behavior of a forest, and a nontrivial way of parallelizing the problem. The final parallelization scheme involved a number of components which include a dynamically scheduled queue, an initial traversal search to determine the order of the nodes, a neighbor checking algorithm that deserialized the iteration steps allowing multiple iterations to happen at once, and a decomposition of the graph into smaller subgraphs to further optimize the results.
+
+An important conclusion that we can gather from the analysis given is the fact that the nature of the L-Systems structure was not directly used in the parallelization (except for Section \ref{sub:splitting_l_systems}, which was unsuccessful). This means that the obtained parallelization algorithm can adequately model similar problems of the same characteristics. Namely, given a simulation problem with fixed local dependence (does not change over time), and problems that grow with the same complexity after each iteration; the present algorithm should render similar results with comparable inputs, even if the internal elements are not precisely L-Systems.
+
+\textbf{Future work:} The main caveat of the produced outputs was that all trees had the same ``age'', which translates in similar complexities (within one order of magnitude). This scenario is not unrealistic, (forest after fires develop in this fashion), but is far from general. We would like to analyze how the system would grow if new trees had the possibility to develop at any given iteration when certain circumstances are met, like the presence of neighboring trees. This would be an interesting problem to analyze, since adding this constraint breaks the main approach of the current parallelization.
+
+In addition, the neighboring relation was an absolute one: either two trees were neighbors or they were not. Reality is not discrete in this regard so we could further enhance the simulation by taking into account the distance as part of the relation and defining a maximum distance for neighbors. Furthermore, as trees grow larger we could increase this radius to satisfactorily model the interdependence between the trees. Both of this additions would affect the parallelization scheme which would need to be rederived for these considerations.
+
+% section conclusion (end)
+
+
+%----------------------------------------------------------------------------------------
+%	REFERENCE LIST
+%----------------------------------------------------------------------------------------
+\nocite{*}
+\bibliographystyle{alpha}
+\bibliography{mybib}
+% \begin{thebibliography}{99} % Bibliography - this is intentionally simple in this template
+
+% \bibitem[Figueredo and Wolf, 2009]{Figueredo:2009dg}
+% Figueredo, A.~J. and Wolf, P. S.~A. (2009).
+% \newblock Assortative pairing and life history strategy - a cross-cultural
+%   study.
+% \newblock {\em Human Nature}, 20:317--330.
+ 
+% \end{thebibliography}
+
+%----------------------------------------------------------------------------------------
+
+\end{multicols}
+
+\end{document}
